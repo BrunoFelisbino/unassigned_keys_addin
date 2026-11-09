@@ -411,11 +411,7 @@
     </button>
     <div class="fsep"></div>
     <!-- filtros locais -->
-    <input type="text" class="finput" id="inp-search" placeholder="Placa, falha, código..." style="width:200px;">
-    <span class="flabel">Falhas</span>
-    <select class="fselect" id="sel-fault" style="min-width:160px;">
-      <option value="">Todas as falhas</option>
-    </select>
+    <input type="text" class="finput" id="inp-search" placeholder="Placa, cartão..." style="width:200px;">
     <button class="btn btn-ghost" id="btn-clear">
       <i class="ti ti-x" style="font-size:12px;"></i> Limpar
     </button>
@@ -596,7 +592,7 @@ if (isMockMode) {
 
 rootScope.geotab.addin.unassigned_keys = function(api, state) {
   _api = api; _state = state;
-  loadLookups(fetchAudit);
+  loadLookups(function(){ setUiStatus('Pronto', 'green'); });
   setupUI();
   setPreset('30d');
   setUiStatus('Pronto', 'green');
