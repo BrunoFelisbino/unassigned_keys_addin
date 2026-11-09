@@ -161,7 +161,7 @@ async function load(api){
     });
     // ordena do mais recente
     allRows.sort(function(a,b){return (b.dateTime||0)-(a.dateTime||0);});
-    $('scannedBox').textContent=scanned;
+    if($('scannedBox'))$('scannedBox').textContent=scanned;
 
     // leituras válidas (cartões cadastrados) via DriverChange
     setStatus('Buscando leituras válidas...');
@@ -190,7 +190,7 @@ async function load(api){
       });
     });
     validRows.sort(function(a,b){return (b.dateTime||0)-(a.dateTime||0);});
-    $('dcBox').textContent=dScanned;
+    if($('dcBox'))$('dcBox').textContent=dScanned;
 
     filtered=allRows.slice();
     apply();
