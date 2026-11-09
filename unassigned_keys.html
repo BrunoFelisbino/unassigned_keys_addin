@@ -1,1198 +1,211 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chaves Não Cadastradas - Frota</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Chaves Não Cadastradas — Geotab Add-In</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>html,body{margin:0;padding:0;background:#f5f8fc;color:#172033;font-family:'Segoe UI',system-ui,sans-serif}</style>
+</head>
+<body>
+<div id="app"><div style="padding:40px;color:#64748b;font-size:13px">Carregando Chaves Não Cadastradas...</div></div>
+<style>
+*{box-sizing:border-box}:root{--bg:#f5f8fc;--card:#fff;--card2:#f8fbff;--txt:#172033;--mut:#64748b;--mut2:#94a3b8;--bd:#e5eaf1;--blue:#0ea5e9;--blue2:#0369a1;--green:#10b981;--yellow:#f59e0b;--orange:#f97316;--red:#ef4444;--gray:#64748b;--shadow:0 12px 28px rgba(15,23,42,.06);--mono:Consolas,monospace}body,#app{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);min-height:100vh;color:var(--txt);padding:16px 20px;background-image:radial-gradient(circle,rgba(15,23,42,.045) 1px,transparent 1px);background-size:24px 24px}.head,.bar,.info,.panel,.kpi{background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:var(--shadow)}.head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;margin-bottom:12px}.title{display:flex;gap:10px;align-items:center;font-weight:800;font-size:18px}.ico{width:46px;height:46px;border-radius:10px;background:#000;display:grid;place-items:center;overflow:hidden;color:#fff;font-weight:800;font-size:14px}.sub{font-family:var(--mono);font-size:10px;color:var(--mut);font-weight:400}.pill{font-family:var(--mono);font-size:10px;color:var(--blue2);background:#fff;border:1px solid var(--bd);border-radius:99px;padding:5px 12px}.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px;margin-bottom:12px}.info{display:flex;gap:16px;flex-wrap:wrap;padding:9px 14px;margin-bottom:12px;color:var(--mut);font-size:12px}button,select,input{height:32px;border-radius:8px;border:1px solid var(--bd);background:#fff;color:var(--txt);font-size:11px;padding:0 10px}button{font-weight:700;cursor:pointer}.primary{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border:0}.alert{padding:10px 14px;border-radius:10px;margin-bottom:12px;font-size:12px;background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.22);color:var(--blue2)}.alert.ok{background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.22);color:#047857}.alert.err{background:rgba(239,68,68,.11);border-color:rgba(239,68,68,.22);color:#991b1b}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:12px}.kpi{padding:16px 14px;min-height:116px;position:relative;overflow:hidden}.kpi span{display:block;color:var(--mut2);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}.kpi b{font-family:var(--mono);font-size:30px;line-height:1}.kpi small{display:block;color:var(--mut);font-size:12px;margin-top:4px}.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}.panel{padding:16px 18px;margin-bottom:12px}.pt{font-size:12px;font-weight:800;color:var(--blue2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}.pt:before{content:'';display:inline-block;width:3px;height:12px;background:linear-gradient(var(--blue),var(--blue2));border-radius:2px;margin-right:7px;vertical-align:-2px}table{width:100%;border-collapse:collapse;font-size:11px}th{text-align:left;background:#f0f9ff;color:var(--blue2);font-size:9px;text-transform:uppercase;letter-spacing:.06em;padding:8px 10px}td{padding:8px 10px;border-bottom:1px solid #edf2f7;color:var(--mut);vertical-align:middle}tr:hover td{background:#f8fbff}.badge{display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:800;font-family:var(--mono)}.okb{background:rgba(16,185,129,.12);color:#047857}.warnb{background:rgba(245,158,11,.13);color:#92400e}.riskb{background:rgba(239,68,68,.11);color:#991b1b}.map{height:340px;border:1px solid var(--bd);border-radius:16px;overflow:hidden}.mono{font-family:var(--mono)}@media(max-width:900px){.cols{grid-template-columns:1fr}}@media(max-width:700px){body,#app{padding:10px}.bar{align-items:stretch;flex-direction:column}.grid{grid-template-columns:1fr}}
+button[disabled]{opacity:.78;cursor:wait}.spinner{width:14px;height:14px;display:inline-block;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;vertical-align:-2px;margin-right:7px;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+</style>
 <script>
 (function(){
-  var s=document.createElement('style');
-  s.textContent='html,body,#app,[id*="addin"],[class*="addin"],#geotab-addin-container{background:#0a0e14!important;background-color:#0a0e14!important;color:#e6edf3!important;}';
-  document.head?document.head.appendChild(s):document.addEventListener('DOMContentLoaded',function(){document.head.appendChild(s);});
+'use strict';
+var apiRef=null,map=null,layer=null,allRows=[],filtered=[],devices={},groups={},deviceGroupIds={};
+var DAY=86400000;
+var $=function(id){return document.getElementById(id);};
+var esc=function(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
+var fmt=v=>v==null||isNaN(Number(v))?'N/I':Number(v).toFixed(2);
+var fmtDate=function(d){var t=new Date(d);return isNaN(t)?'-':t.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});};
+var call=function(t,s){return new Promise(function(ok,err){apiRef.call('Get',{typeName:t,search:s||{}},ok,err);});};
+
+function shell(){
+  $('app').innerHTML=
+    '<div class="head"><div class="title"><div class="ico">CK</div><div><strong>Chaves Não Cadastradas</strong><div class="sub">Controle de cartões não vinculados • Geotab</div></div></div><div class="pill" id="statusBox">Conectando...</div></div>'+
+    '<div class="bar">'+
+      '<select id="periodFilter">'+
+        '<option value="today" selected>Hoje</option>'+
+        '<option value="7d">7 dias</option>'+
+        '<option value="30d">30 dias</option>'+
+        '<option value="90d">90 dias</option>'+
+      '</select>'+
+      '<select id="groupFilter"><option value="">Todos os grupos</option></select>'+
+      '<select id="deviceFilter"><option value="">Todos os veículos</option></select>'+
+      '<input id="queryFilter" placeholder="Placa ou cartão..."/>'+
+      '<button class="primary" id="refreshBtn">Buscar dados</button>'+
+    '</div>'+
+    '<div class="info"><span>Registros: <b id="countBox">0</b></span><span>Audit escaneados: <b id="scannedBox">0</b></span><span id="filterInfo"></span></div>'+
+    '<div id="alertBox" class="alert" style="display:none"></div>'+
+    '<div id="kpisBox" class="grid"></div>'+
+    '<div class="cols"><div class="panel"><div class="pt">Mapa dos veículos com tentativas</div><div id="mapBox" class="map"></div></div>'+
+      '<div class="panel"><div class="pt">Resumo</div><div id="summaryBox" style="color:var(--mut);font-size:12px">—</div></div></div>'+
+    '<div class="panel"><div class="pt">Tentativas de cartões não cadastrados</div><div id="tableBox"></div></div>'+
+    '<footer style="text-align:center;font-size:11px;color:var(--mut);padding:8px 0">Projeto independente • Licença MIT</footer>';
+  $('refreshBtn').onclick=function(){load(apiRef);};
+  $('periodFilter').onchange=apply;
+  $('groupFilter').onchange=apply;
+  $('deviceFilter').onchange=apply;
+  $('queryFilter').oninput=apply;
+}
+function setStatus(t){var e=$('statusBox');if(e)e.textContent=t;}
+function alertMsg(t,ok,err){var e=$('alertBox');if(!e)return;e.style.display=t?'block':'none';e.className='alert '+(ok?'ok':err?'err':'');e.textContent=t||'';}
+
+function getRange(){
+  var now=new Date(), today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  var p=($('periodFilter')&&$('periodFilter').value)||'today';
+  if(p==='today')return{from:today,to:now};
+  if(p==='7d')return{from:new Date(today.getTime()-6*DAY),to:now};
+  if(p==='30d')return{from:new Date(today.getTime()-29*DAY),to:now};
+  if(p==='90d')return{from:new Date(today.getTime()-89*DAY),to:now};
+  return{from:today,to:now};
+}
+
+async function load(api){
+  if(!api){setStatus('Não conectado');alertMsg('Abra este add-in dentro do MyGeotab para carregar dados reais.',false,true);return;}
+  apiRef=api;
+  setStatus('Carregando...');alertMsg('');
+  var rng=getRange();
   try{
-    document.documentElement.style.setProperty('background','#0a0e14','important');
-    document.documentElement.style.setProperty('background-color','#0a0e14','important');
-    document.body&&document.body.style.setProperty('background','#0a0e14','important');
-  }catch(e){}
-})();
-</script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<style>
-  /* ── FORCE DARK BG (MyGeotab override) ── */
-  html, body, #app,
-  [id*="addin"], [class*="addin"],
-  #geotab-addin-container {
-    background: #0a0e14 !important;
-    background-color: #0a0e14 !important;
-  }
+    var gr=await call('Group',{}).catch(function(){return[];});
+    groups={};gr.forEach(function(g){if(g&&g.id)groups[g.id]=g;});
+    $('groupFilter').innerHTML='<option value="">Todos os grupos</option>'+gr.filter(function(g){return g&&g.name&&g.name!=='GroupCompanyId';}).sort(function(a,b){return a.name.localeCompare(b.name);}).map(function(g){return '<option value="'+esc(g.id)+'">'+esc(g.name)+'</option>';}).join('');
+    var dv=await call('Device',{}).catch(function(){return[];});
+    devices={};deviceGroupIds={};
+    dv.forEach(function(d){if(!d||!d.name)return;var plate=inferPlate(d);devices[d.id]={id:d.id,name:d.name,plate:plate};deviceGroupIds[d.id]=(d.groups||[]).map(function(x){return x.id;});});
+    $('deviceFilter').innerHTML='<option value="">Todos os veículos</option>'+Object.values(devices).sort(function(a,b){return a.plate.localeCompare(b.plate);}).map(function(d){return '<option value="'+esc(d.id)+'">'+esc(d.plate)+'</option>';}).join('');
 
-  :root {
-    --bg:      #0a0e14;
-    --surface: #0f1628;
-    --surface2:#111c32;
-    --surface3:#18243b;
-    --border:  rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.12);
-    --text:    #e6edf3;
-    --text2:   #94a3b8;
-    --text3:   #64748b;
-    --border-accent: rgba(0,212,255,0.25);
-    --accent:  #f87171;
-    --warn:    #fbbf24;
-    --ok:      #34d399;
-    --info:    #00d4ff;
-    --purple:  #a78bfa;
-    --orange:  #ff6b35;
-    --font:    'Manrope', 'Segoe UI', system-ui, sans-serif;
-    --mono:    'Space Mono', 'IBM Plex Mono', monospace;
-    --r:       10px;
-    --r2:      14px;
-    --shadow:  none;
-  }
-
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  html, body {
-    background: var(--bg) !important;
-    color: var(--text);
-    font-family: var(--font);
-    font-size: 13px;
-    min-height: 100%;
-    width: 100%;
-    background-image:
-      radial-gradient(circle at top left, rgba(0,212,255,.06), transparent 28%),
-      radial-gradient(circle at top right, rgba(167,139,250,.05), transparent 22%) !important;
-  }
-
-  #app {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    padding: 16px 20px;
-    background: transparent;
-  }
-
-  /* ── TOPBAR ── */
-  .topbar {
-    display: flex; align-items: center; justify-content: space-between; gap: 14px;
-    margin-bottom: 18px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid var(--border);
-    position: static;
-  }
-  .logo { display:flex; align-items:center; gap:12px; }
-  .logo-icon {
-    width: 32px; height: 32px; border-radius: 9px;
-    background: var(--info);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
-    color: #0a0e14;
-    box-shadow: 0 0 18px rgba(0,212,255,0.28);
-    flex-shrink: 0;
-  }
-  .logo-text { font-weight: 800; font-size: 15px; letter-spacing: -0.03em; }
-  .logo-sub { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; }
-  .dot { width:6px; height:6px; border-radius:50%; background:var(--accent); animation:pulse 2s infinite; }
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-  .spacer { flex:1; }
-
-  .badge {
-    font-family: var(--mono); font-size: 10px; color: var(--text2);
-    background: rgba(0,212,255,0.07); padding: 7px 12px;
-    border-radius: 999px; border: 1px solid var(--border);
-    display: inline-flex; align-items: center; gap: 5px;
-  }
-  .status-pill {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(0,212,255,0.07); border: 1px solid rgba(0,212,255,0.18);
-    border-radius: 20px; padding: 4px 12px;
-    font-family: var(--mono); font-size: 10px; color: var(--info);
-  }
-  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--info); animation: pulse 2s infinite; }
-  .status-dot.green { background: var(--ok); }
-  .status-dot.yellow { background: var(--warn); }
-  .status-dot.red { background: var(--accent); }
-
-  /* ── FILTERBAR ── */
-  .filterbar {
-    display: flex; align-items: center; gap: 10px;
-    padding: 12px 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-  }
-  .flabel {
-    font-size: 10px; color: var(--text3);
-    text-transform: uppercase; letter-spacing: .06em;
-    white-space: nowrap; font-weight: 600;
-  }
-  .finput, .fselect {
-    background: #0d1117; border: 1px solid var(--border2);
-    border-radius: 7px; color: var(--text);
-    font-family: var(--font); font-size: 11px;
-    padding: 0 10px; height: 32px; outline: none; transition: border-color .2s, box-shadow .2s, transform .2s;
-  }
-  .finput:focus, .fselect:focus { border-color: var(--border-accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.08); }
-  .fselect option { background: #0d1117; color: var(--text); }
-  .fsep { width:1px; height:20px; background:var(--border); flex-shrink:0; }
-
-  /* Preset buttons */
-  .presets { display:flex; gap:3px; }
-  .pbtn {
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 6px; color: var(--text2); font-size: 11px;
-    font-family: var(--mono); padding: 4px 10px; cursor: pointer;
-    transition: all .16s; white-space: nowrap;
-  }
-  .pbtn:hover  { border-color: var(--border-accent); color: var(--text); transform: translateY(-1px); }
-  .pbtn.active { background: rgba(0,212,255,.12); border-color: var(--border-accent); color: var(--info); }
-
-  /* Buttons */
-  .btn {
-    display: inline-flex; align-items: center; gap: 5px;
-    border-radius: 7px; font-family: var(--font);
-    font-size: 11px; font-weight: 600; padding: 0 14px; height: 32px;
-    cursor: pointer; transition: all .15s; border: none;
-    white-space: nowrap;
-  }
-  .btn-blue  { background: var(--info); color: #0a0e14; box-shadow: 0 0 16px rgba(0,212,255,0.15); }
-  .btn-blue:hover  { opacity: .96; transform: translateY(-1px); }
-  .btn-blue:disabled  { opacity: .4; cursor: default; transform: none; }
-  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text2); }
-  .btn-ghost:hover { border-color: var(--border-accent); color: var(--text); }
-  .btn-red   { background: transparent; color: var(--accent); border: 1px solid rgba(248,113,113,0.3); }
-  .btn-red:hover   { opacity: .96; transform: translateY(-1px); }
-  .btn-red:disabled { opacity: .4; cursor: default; transform: none; }
-
-  /* ── CONTENT ── */
-  .content { padding: 18px 0 24px; display: flex; flex-direction: column; gap: 14px; }
-
-  /* ── KPIs ── */
-  .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 12px;
-  }
-  .kpi {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px; padding: 16px 14px;
-    position: relative; overflow: hidden;
-    transition: transform .2s, box-shadow .2s, border-color .2s;
-    animation: fadeUp .4s ease forwards;
-  }
-  .kpi:hover { transform: translateY(-2px); border-color: rgba(0,212,255,.2); }
-  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-  .kpi-bar  { position:absolute; top:0; left:0; width:3px; height:100%; border-radius:3px 0 0 3px; }
-  .kpi-lbl  { font-size: 9px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .09em; margin-bottom: 8px; }
-  .kpi-val  { font-size: 26px; font-weight: 800; line-height: 1; font-family: var(--mono); margin-bottom: 4px; letter-spacing: -0.03em; }
-  .kpi-sub  { font-size: 10px; color: var(--text2); }
-  .kpi-ico  { position:absolute; right:12px; top:12px; font-size:18px; opacity:.14; }
-  .rank-list { display: grid; gap: 10px; margin-top: 12px; }
-  .rank-row { display: grid; gap: 5px; }
-  .rank-head {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    font-size: 11px; color: var(--text2);
-  }
-  .rank-name { color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .rank-meta { font-family: var(--mono); font-size: 10px; color: var(--text3); white-space: nowrap; }
-  .rank-track {
-    width: 100%; height: 8px; border-radius: 999px; overflow: hidden;
-    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-  }
-  .rank-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, rgba(0,212,255,.35), rgba(0,212,255,.9)); }
-
-  /* ── CHARTS ── */
-  .charts-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-  .chart-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px; padding: 16px 16px 14px;
-  }
-  .chart-box.wide { grid-column: 1 / -1; }
-  .chart-lbl {
-    font-size: 10px; font-weight: 700; color: var(--info);
-    text-transform: uppercase; letter-spacing: .07em;
-    margin-bottom: 10px;
-    display: flex; align-items: center; gap: 6px;
-  }
-  .chart-lbl::before {
-    content: '';
-    width: 3px; height: 11px;
-    background: var(--info);
-    border-radius: 2px;
-    display: inline-block;
-  }
-
-  /* ── TABLE ── */
-  .tcard {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 14px; overflow: hidden;
-  }
-  .thead-bar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 16px; border-bottom: 1px solid var(--border);
-  }
-  .thead-lbl {
-    font-size: 10px; font-weight: 700; color: var(--info);
-    text-transform: uppercase; letter-spacing: .07em;
-    display: flex; align-items: center; gap: 6px;
-  }
-  .thead-lbl::before {
-    content: '';
-    width: 3px; height: 11px;
-    background: var(--info);
-    border-radius: 2px;
-    display: inline-block;
-  }
-  .thead-cnt { font-size: 11px; color: var(--text3); font-family: var(--mono); }
-  .twrap { overflow-x: auto; }
-
-  table { width: 100%; border-collapse: collapse; font-size: 11px; }
-  thead th {
-    padding: 10px 12px; text-align: left; font-size: 9px;
-    color: var(--info); text-transform: uppercase; letter-spacing: .09em;
-    font-weight: 700; border-bottom: 1px solid var(--border);
-    background: rgba(0,212,255,0.04);
-    white-space: nowrap; cursor: pointer; user-select: none;
-  }
-  thead th:hover { color: var(--info); }
-  .si { margin-left: 3px; opacity: .4; }
-  tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); }
-  tbody tr:hover td { background: rgba(0,212,255,0.04); }
-  tbody tr:last-child { border-bottom: none; }
-  tbody td {
-    padding: 10px 12px; white-space: nowrap;
-    max-width: 200px; overflow: hidden; text-overflow: ellipsis;
-    vertical-align: middle; color: var(--text2);
-  }
-
-  .bdg {
-    display: inline-flex; align-items: center;
-    font-size: 10px; font-weight: 700; padding: 3px 8px;
-    border-radius: 999px; font-family: var(--mono);
-  }
-  .bdg-r { background: rgba(248,113,113,.12); color: var(--accent); border: 1px solid rgba(248,113,113,.22); }
-  .bdg-w { background: rgba(251,191,36,.12);  color: var(--warn);   border: 1px solid rgba(251,191,36,.22); }
-  .bdg-i { background: rgba(0,212,255,.12);   color: var(--info);   border: 1px solid rgba(0,212,255,.22); }
-  .code  { font-family: var(--mono); font-size: 10px; color: var(--text3); }
-
-  /* pagination */
-  .pag {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 16px; border-top: 1px solid var(--border);
-  }
-  .pag-info { font-size: 11px; color: var(--text3); font-family: var(--mono); }
-  .pag-btns { display: flex; gap: 3px; }
-  .pbtn2 {
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 8px; color: var(--text2); font-size: 11px;
-    padding: 3px 9px; cursor: pointer; font-family: var(--mono);
-    transition: all .15s;
-  }
-  .pbtn2:hover:not(:disabled) { border-color: var(--border-accent); color: var(--info); }
-  .pbtn2:disabled { opacity: .35; cursor: default; }
-  .pbtn2.on { background: rgba(0,212,255,0.15); border-color: var(--border-accent); color: var(--info); }
-
-  /* ── STATES ── */
-  .statebox { text-align: center; padding: 56px 24px; color: var(--text3); }
-  .statebox i { font-size: 36px; display: block; margin-bottom: 12px; }
-  .statebox .st { font-size: 14px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
-  .statebox .ss { font-size: 12px; line-height: 1.7; }
-  .spin {
-    width: 32px; height: 32px;
-    border: 2.5px solid rgba(0,212,255,0.2);
-    border-top-color: var(--info);
-    border-radius: 50%;
-    animation: spin .75s linear infinite;
-    margin: 0 auto 14px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-
-  /* ── INFO BAR ── */
-  .info-bar {
-    display: flex; align-items: center; gap: 16px;
-    padding: 8px 14px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    font-size: 11px; color: var(--text3);
-    flex-wrap: wrap;
-    margin-bottom: 2px;
-  }
-  .info-bar strong { color: var(--text2); font-weight: 600; }
-
-  ::-webkit-scrollbar { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-
-  @media (max-width: 720px) {
-    .charts-grid { grid-template-columns: 1fr; }
-    .filterbar { gap: 6px; }
-    .content { padding: 12px 0 20px; }
-    #app { padding: 8px; }
-    .topbar, .filterbar { border-radius: 14px; }
-    .logo-text { font-size: 14px; }
-    .badge { display:none; }
-  }
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:1000;}
-.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;min-width:320px;max-width:480px;box-shadow:var(--shadow);}
-.modal h3{margin-bottom:12px;color:var(--info);}
-.modal .row{display:flex;gap:8px;margin-top:12px;justify-content:flex-end;}
-</style>
-<body>
-<div id="app">
-
-  <!-- TOPBAR -->
-  <div class="topbar">
-    <div class="logo">
-      <div class="logo-icon"><i class="ti ti-key"></i></div>
-      <div>
-        <div class="logo-text">Chaves Não Cadastradas</div>
-        <div class="logo-sub">CONTROLE DE CARTÕES v1.0.0</div>
-      </div>
-    </div>
-    <div class="spacer"></div>
-    <div class="status-pill" id="status-pill">
-      <span class="status-dot"></span>
-      <span id="status-label">Pronto</span>
-    </div>
-    <div class="badge" id="badge-count">
-      <i class="ti ti-database" style="font-size:11px;margin-right:4px;"></i>
-      <span id="total-count">—</span> registros
-    </div>
-    <button class="btn btn-red" id="btn-export" disabled>
-      <i class="ti ti-download" style="font-size:13px;"></i> Exportar TSV
-    </button>
-  </div>
-
-  <!-- FILTERBAR -->
-  <div class="filterbar">
-    <!-- período -->
-    <span class="flabel">Período</span>
-    <div class="presets">
-      <button class="pbtn active" data-p="today">Hoje</button>
-      <button class="pbtn" data-p="7d">7 dias</button>
-      <button class="pbtn" data-p="30d">30 dias</button>
-      <button class="pbtn" data-p="90d">90 dias</button>
-      <button class="pbtn" data-p="custom">Personalizado</button>
-    </div>
-    <div id="custom-dates" style="display:none;align-items:center;gap:6px;">
-      <input type="date" class="finput" id="date-from">
-      <span class="flabel">até</span>
-      <input type="date" class="finput" id="date-to">
-    </div>
-    <div class="fsep"></div>
-    <!-- grupo -->
-    <span class="flabel">Grupo</span>
-    <select class="fselect" id="sel-group" style="min-width:180px;max-width:260px;">
-      <option value="">Todos os grupos</option>
-    </select>
-    <div class="fsep"></div>
-    <!-- veículo -->
-    <span class="flabel">Veículo</span>
-    <select class="fselect" id="sel-device" style="min-width:180px;max-width:260px;">
-      <option value="">Todos</option>
-    </select>
-    <button class="btn btn-blue" id="btn-fetch">
-      <i class="ti ti-refresh" style="font-size:13px;"></i> Buscar dados
-    </button>
-    <div class="fsep"></div>
-    <!-- filtros locais -->
-    <input type="text" class="finput" id="inp-search" placeholder="Placa, cartão..." style="width:200px;">
-    <button class="btn btn-ghost" id="btn-clear">
-      <i class="ti ti-x" style="font-size:12px;"></i> Limpar
-    </button>
-  </div>
-
-  <div class="info-bar">
-    <span>Período: <strong id="info-period">—</strong></span>
-    <span>Grupo: <strong id="info-group">Todos</strong></span>
-    <span>Veículo: <strong id="info-vehicle">Todos</strong></span>
-    <span>Falha: <strong id="info-fault">Todas</strong></span>
-    <span>Busca: <strong id="info-search">—</strong></span>
-  </div>
-
-  <!-- CONTENT -->
-  <div class="content" id="content">
-
-    <!-- KPIs -->
-    <div class="kpi-grid" id="kpi-grid" style="display:none;">
-      <div class="kpi">
-        <div class="kpi-bar" style="background:var(--accent);"></div>
-        <div class="kpi-lbl">Tentativas</div>
-        <div class="kpi-val" id="kv-total" style="color:var(--accent);">—</div>
-        <div class="kpi-sub" id="ks-total">—</div>
-        <i class="ti ti-alert-triangle kpi-ico" style="color:var(--accent);"></i>
-      </div>
-      <div class="kpi">
-        <div class="kpi-bar" style="background:var(--warn);"></div>
-        <div class="kpi-lbl">Veículos afetados</div>
-        <div class="kpi-val" id="kv-dev" style="color:var(--warn);">—</div>
-        <div class="kpi-sub" id="ks-dev">dispositivos únicos</div>
-        <i class="ti ti-car kpi-ico" style="color:var(--warn);"></i>
-      </div>
-      <div class="kpi">
-        <div class="kpi-bar" style="background:var(--info);"></div>
-        <div class="kpi-lbl">Cartões não cadastrados</div>
-        <div class="kpi-val" id="kv-types" style="color:var(--info);">—</div>
-        <div class="kpi-sub" id="ks-types">tipos distintos</div>
-        <i class="ti ti-list kpi-ico" style="color:var(--info);"></i>
-      </div>
-      <div class="kpi">
-        <div class="kpi-bar" style="background:#9b59b6;"></div>
-        <div class="kpi-lbl">Falha mais recente</div>
-        <div class="kpi-val" id="kv-latest" style="font-size:16px;color:#9b59b6;">—</div>
-        <div class="kpi-sub" id="ks-latest">—</div>
-        <i class="ti ti-clock kpi-ico" style="color:#9b59b6;"></i>
-      </div>
-      <div class="kpi">
-        <div class="kpi-bar" style="background:var(--ok);"></div>
-        <div class="kpi-lbl">Falha mais frequente</div>
-        <div class="kpi-val" id="kv-top" style="font-size:13px;line-height:1.3;color:var(--ok);padding-top:4px;">—</div>
-        <div class="kpi-sub" id="ks-top">—</div>
-        <i class="ti ti-flame kpi-ico" style="color:var(--ok);"></i>
-      </div>
-      <div class="kpi">
-        <div class="kpi-bar" style="background:#e67e22;"></div>
-        <div class="kpi-lbl">Período</div>
-        <div class="kpi-val" id="kv-period" style="font-size:13px;line-height:1.4;color:#e67e22;padding-top:4px;">—</div>
-        <div class="kpi-sub" id="ks-period">—</div>
-        <i class="ti ti-calendar kpi-ico" style="color:#e67e22;"></i>
-      </div>
-      <div class="kpi" id="kpi-group-ranking" style="grid-column: 1 / -1;">
-        <div class="kpi-bar" style="background:#00d4ff;"></div>
-        <div class="kpi-lbl">Ranking por grupo</div>
-        <div class="kpi-sub" id="ks-group-ranking">—</div>
-        <div class="rank-list" id="group-ranking-list"></div>
-        <i class="ti ti-medal kpi-ico" style="color:#00d4ff;"></i>
-      </div>
-    </div>
-
-    <!-- CHARTS -->
-    <div class="charts-grid" id="charts-grid" style="display:none;">
-      <div class="chart-box">
-        <div class="chart-lbl"><i class="ti ti-chart-bar"></i> Falhas por tipo (top 10)</div>
-        <div style="position:relative;height:240px;"><canvas id="ch-type"></canvas></div>
-      </div>
-      <div class="chart-box">
-        <div class="chart-lbl"><i class="ti ti-chart-pie"></i> Falhas por veículo (top 8)</div>
-        <div style="position:relative;height:240px;"><canvas id="ch-dev"></canvas></div>
-      </div>
-      <div class="chart-box wide">
-        <div class="chart-lbl"><i class="ti ti-timeline"></i> Falhas ao longo do tempo</div>
-        <div style="position:relative;height:180px;"><canvas id="ch-time"></canvas></div>
-      </div>
-    </div>
-
-    <!-- TABLE -->
-    <div class="tcard" id="tcard" style="display:none;">
-      <div class="thead-bar">
-        <div class="thead-lbl"><i class="ti ti-table" style="font-size:12px;margin-right:4px;"></i> Registros</div>
-        <div class="thead-cnt" id="tbl-count">—</div>
-      </div>
-      <div class="twrap">
-        <table>
-          <thead><tr>
-            <th data-col="dateTime">Data/Hora <span class="si">↕</span></th>
-            <th data-col="devicePlate">Placa <span class="si">↕</span></th>
-            <th data-col="serial">Cartão <span class="si">↕</span></th>
-            <th data-col="status">Status <span class="si">↕</span></th>
-            <th>Ação</th>
-          </tr></thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
-      <div class="pag">
-        <div class="pag-info" id="pag-info">—</div>
-        <div class="pag-btns" id="pag-btns"></div>
-      </div>
-    </div>
-
-    <!-- ESTADOS -->
-    <div id="st-initial" class="statebox">
-      <i class="ti ti-database-search" style="color:var(--info);"></i>
-      <div class="st">Pronto para consultar</div>
-      <div class="ss">Selecione o período e veículo,<br>depois clique em <strong style="color:var(--info);">Buscar dados</strong>.</div>
-    </div>
-    <div id="st-loading" class="statebox" style="display:none;">
-      <div class="spin"></div>
-      <div class="st">Consultando a API Geotab...</div>
-      <div class="ss" id="st-load-msg">Aguarde</div>
-    </div>
-    <div id="st-empty" class="statebox" style="display:none;">
-      <i class="ti ti-mood-empty"></i>
-      <div class="st">Nenhuma falha encontrada</div>
-      <div class="ss">Sem registros no período selecionado.</div>
-    </div>
-    <div id="st-error" class="statebox" style="display:none;">
-      <i class="ti ti-alert-circle" style="color:var(--accent);"></i>
-      <div class="st">Erro ao buscar dados</div>
-      <div class="ss" id="st-err-msg">Verifique permissões e conexão.</div>
-    </div>
-
-  </div><!-- /content -->
-</div><!-- /app -->
-
-<script>
-<div class="modal-bg" id="modal-bg">
-  <div class="modal">
-    <h3>Vincular cartão</h3>
-    <div id="modal-card" style="font-family:var(--mono);margin-bottom:10px;"></div>
-    <label style="font-size:11px;color:var(--text3);">Usuário (motorista)</label>
-    <select id="modal-user" style="width:100%;margin-top:4px;"></select>
-    <div class="row">
-      <button id="modal-cancel">Cancelar</button>
-      <button class="btn btn-blue" id="modal-save">Vincular</button>
-    </div>
-  </div>
-</div>
-
-/* =========================================================
-   GEOTAB ADD-IN — unassigned_keys
-   ========================================================= */
-
-var _api, _state;
-var allData = [], filteredData = [];
-var currentPage = 1, PAGE = 20;
-var sortCol = 'dateTime', sortDir = -1;
-var activePreset = '30d';
-var deviceMap = {};
-var groupMap = {};
-var diagnosticMap = {};
-var devicesLoaded = false;
-var groupsLoaded = false;
-var diagnosticsLoaded = false;
-var lookupsReadyCount = 0;
-var lookupsReadyCallback = null;
-var chType = null, chDev = null, chTime = null;
-var COLORS = ['#e84d3d','#4a9eff','#f5a623','#2ecc71','#9b59b6','#e67e22','#1abc9c','#e74c3c','#3498db','#f39c12','#16a085','#8e44ad'];
-
-// ── ENTRY POINT ──
-var rootScope = typeof window !== 'undefined' ? window : globalThis;
-var isMockMode = typeof rootScope.geotab === 'undefined';
-if (isMockMode) {
-  rootScope.geotab = { addin: {} };
-} else {
-  rootScope.geotab = rootScope.geotab || {};
-  rootScope.geotab.addin = rootScope.geotab.addin || {};
-}
-
-rootScope.geotab.addin.unassigned_keys = function(api, state) {
-  _api = api; _state = state;
-  loadLookups(fetchAudit);
-  setupUI();
-  setPreset('today');
-  setUiStatus('Pronto', 'green');
-};
-
-function loadLookups(onReady) {
-  lookupsReadyCount = 0;
-  lookupsReadyCallback = onReady;
-  loadDevices(lookupLoaded);
-  loadUsers(lookupLoaded);
-  loadGroups(lookupLoaded);
-}
-
-function lookupLoaded() {
-  lookupsReadyCount += 1;
-  if (lookupsReadyCount >= 3 && typeof lookupsReadyCallback === 'function') {
-    var cb = lookupsReadyCallback;
-    lookupsReadyCallback = null;
-    cb();
-  }
-}
-
-// ── DEVICES ──
-function loadGroups(onReady) {
-  _api.call('Get', { typeName: 'Group' }, function(groups) {
-    groupMap = {};
-    groupsLoaded = true;
-    (groups || [])
-      .filter(function(g){ return g && g.id && g.name; })
-      .sort(function(a,b){ return a.name.localeCompare(b.name); })
-      .forEach(function(g){ groupMap[g.id] = g; });
-    populateGroupFilter();
-    if (typeof onReady === 'function') onReady();
-  }, function(e) {
-    console.warn('[FD] groups err', e);
-    groupsLoaded = true;
-    populateGroupFilter();
-    if (typeof onReady === 'function') onReady();
-  });
-}
-
-function loadDevices(onReady) {
-  _api.call('Get', { typeName: 'Device' }, function(devs) {
-    deviceMap = {};
-    devicesLoaded = true;
-    var sel = document.getElementById('sel-device');
-    (devs || [])
-      .filter(function(d){ return d && d.name; })
-      .sort(function(a,b){ return a.name.localeCompare(b.name); })
-      .forEach(function(d){
-        var plateLabel = inferPlateLabel(d);
-        deviceMap[d.id] = {
-          name: d.name,
-          plate: plateLabel,
-          groupIds: getDeviceGroupIds(d)
-        };
-      });
-    populateDeviceFilter();
-    if (typeof onReady === 'function') onReady();
-  }, function(e){
-    console.warn('[FD] devices err', e);
-    devicesLoaded = true;
-    populateDeviceFilter();
-    if (typeof onReady === 'function') onReady();
-  });
-}
-
-function loadUsers(onReady) {
-  _api.call('Get', { typeName: 'User' }, function(users) {
-    userMap = {};
-    (users || []).filter(function(u){ return u && u.isDriver; }).forEach(function(u){ userMap[u.id] = u; });
-    var sel = document.getElementById('modal-user');
-    if (sel) sel.innerHTML = Object.values(userMap).sort(function(a,b){ return (a.firstName||a.name||'').localeCompare(b.firstName||b.name||''); }).map(function(u){ return '<option value="'+esc(u.id)+'">'+esc((u.firstName||'')+' '+(u.lastName||'')+' ('+(u.name||'')+')')+'</option>'; }).join('');
-    populateUserFilter();
-    if (typeof onReady === 'function') onReady();
-  }, function(e) {
-    console.warn('[UK] users err', e);
-    if (typeof onReady === 'function') onReady();
-  });
-}
-
-function populateGroupFilter() {
-  var sel = document.getElementById('sel-group');
-  if (!sel) return;
-  var current = sel.value;
-  var groups = Object.keys(groupMap).map(function(id){ return groupMap[id]; }).sort(function(a,b){ return a.name.localeCompare(b.name); });
-  sel.innerHTML = '<option value="">Todos os grupos</option>' + groups.map(function(g){
-    return '<option value="' + esc(g.id) + '">' + esc(g.name) + '</option>';
-  }).join('');
-  sel.value = current && groupMap[current] ? current : '';
-  populateDeviceFilter();
-}
-
-function populateDeviceFilter() {
-  var sel = document.getElementById('sel-device');
-  if (!sel) return;
-  var current = sel.value;
-  var groupSel = document.getElementById('sel-group');
-  var groupId = groupSel ? groupSel.value : '';
-  var devices = Object.keys(deviceMap).map(function(id){ return { id: id, data: deviceMap[id] }; }).filter(function(item){
-    return item.data && deviceMatchesGroup(item.data, groupId);
-  }).sort(function(a,b){ return a.data.plate.localeCompare(b.data.plate); });
-  sel.innerHTML = '<option value="">Todos os veículos</option>' + devices.map(function(item){
-    return '<option value="' + esc(item.id) + '">' + esc(item.data.plate) + '</option>';
-  }).join('');
-  sel.value = current && deviceMap[current] && deviceMatchesGroup(deviceMap[current], groupId) ? current : '';
-}
-
-function getDeviceGroupIds(device) {
-  var ids = [];
-  if (!device) return ids;
-  if (Array.isArray(device.groupIds)) ids = ids.concat(device.groupIds);
-  if (device.groupId) ids.push(device.groupId);
-  if (Array.isArray(device.groups)) {
-    device.groups.forEach(function(g) {
-      if (!g) return;
-      if (typeof g === 'string') ids.push(g);
-      else if (g.id) ids.push(g.id);
-      else if (g.groupId) ids.push(g.groupId);
-    });
-  }
-  return ids.filter(Boolean).map(function(id){ return String(id); }).filter(function(id, idx, arr){ return arr.indexOf(id) === idx; });
-}
-
-function deviceMatchesGroup(device, groupId) {
-  if (!groupId) return true;
-  var ids = device && Array.isArray(device.groupIds) ? device.groupIds : [];
-  return ids.indexOf(groupId) !== -1;
-}
-
-function getScopedData() {
-  var groupSel = document.getElementById('sel-group');
-  var devSel = document.getElementById('sel-device');
-  var groupId = groupSel ? groupSel.value : '';
-  var devId = devSel ? devSel.value : '';
-  return allData.filter(function(r) {
-    if (groupId && !deviceMatchesGroup(deviceMap[r.deviceId], groupId)) return false;
-    if (devId && r.deviceId !== devId) return false;
-    return true;
-  });
-}
-
-function getPrimaryGroupId(device) {
-  var ids = device && Array.isArray(device.groupIds) ? device.groupIds : [];
-  return ids.length ? ids[0] : '';
-}
-
-function getPrimaryGroupName(device) {
-  var groupId = getPrimaryGroupId(device);
-  if (!groupId) return 'Sem grupo';
-  return (groupMap[groupId] && groupMap[groupId].name) ? groupMap[groupId].name : 'Sem grupo';
-}
-
-// ── FETCH ──
-function fetchAudit() {
-  if (!devicesLoaded) { setLoadMsg('Carregando referências...'); return; }
-  setUiStatus('Consultando...', 'yellow');
-  showState('loading');
-  document.getElementById('btn-fetch').disabled = true;
-  var rng = getRange();
-  var search = { fromDate: rng.from.toISOString(), toDate: rng.to.toISOString() };
-
-  setLoadMsg('Buscando Audit...');
-  _api.call('Get', { typeName: 'Audit', search: search }, function(res) {
-    document.getElementById('btn-fetch').disabled = false;
-    allData = [];
-    (res || []).forEach(function(a){
-      var txt = (a.name || '') + ' ' + (a.comment || '');
-      var low = txt.toLowerCase();
-      if (low.indexOf('key') === -1 && low.indexOf('chave') === -1 && low.indexOf('cart') === -1 && low.indexOf('inserir') === -1) return;
-      var m = txt.match(/(\d{6,})/);
-      var serial = m ? m[1] : '—';
-      var plate = '—';
-      var pm = txt.match(/([A-Z]{3}\d[A-Z0-9]\d{2})/);
-      if (pm) plate = pm[1];
-      var devInfo = {};
-      // try match device by plate
-      Object.keys(deviceMap).forEach(function(id){ if (deviceMap[id].plate === plate || (deviceMap[id].name||'').indexOf(plate) !== -1) devInfo = deviceMap[id]; });
-      allData.push({
-        deviceId: devInfo.id || plate,
-        deviceName: devInfo.name || plate,
-        devicePlate: plate,
-        dateTime: a.dateTime ? new Date(a.dateTime) : null,
-        serial: serial,
-        status: 'Não cadastrado'
+    setStatus('Buscando Audit...');
+    var aud=await call('Audit',{fromDate:rng.from.toISOString(),toDate:rng.to.toISOString()});
+    var scanned=(aud||[]).length;
+    allRows=[];
+    (aud||[]).forEach(function(a){
+      var txt=((a.name||'')+' '+(a.comment||'')).replace(/\s+/g,' ').trim();
+      var low=txt.toLowerCase();
+      // aceita entradas relacionadas a chave/cartão/motorista não atribuído
+      var matchKey=(low.indexOf('key')!==-1||low.indexOf('chave')!==-1||low.indexOf('cart')!==-1||low.indexOf('inserir')!==-1);
+      var matchUnassigned=(low.indexOf('unassign')!==-1||low.indexOf('não atrib')!==-1||low.indexOf('nao atrib')!==-1||low.indexOf('não cadastr')!==-1||low.indexOf('nao cadastr')!==-1||low.indexOf('without')!==-1);
+      if(!matchKey && !matchUnassigned) return;
+      var serial=extractSerial(txt);
+      var plate=extractPlate(txt);
+      var devInfo=findDeviceByPlate(plate);
+      allRows.push({
+        dateTime:a.dateTime?new Date(a.dateTime):null,
+        serial:serial||'—',
+        plate:plate||(devInfo?devInfo.plate:'—'),
+        deviceId:devInfo?devInfo.id:'',
+        deviceName:devInfo?devInfo.name:(plate||'—')
       });
     });
-    document.getElementById('total-count').textContent = allData.length.toLocaleString('pt-BR');
-    applyFilters();
-    if (allData.length === 0) { showState('empty'); }
-    else { showState('data'); document.getElementById('btn-export').disabled = false; }
-    setUiStatus('Dados carregados', 'green');
-  }, function(e) {
-    document.getElementById('btn-fetch').disabled = false;
-    document.getElementById('st-err-msg').textContent = typeof e === 'string' ? e : JSON.stringify(e);
-    showState('error');
-    console.error('[UK] fetch err', e);
-    setUiStatus('Erro', 'red');
-  });
+    // ordena do mais recente
+    allRows.sort(function(a,b){return (b.dateTime||0)-(a.dateTime||0);});
+    $('scannedBox').textContent=scanned;
+    filtered=allRows.slice();
+    apply();
+    if(!allRows.length){alertMsg('Nenhuma chave não cadastrada encontrada no período. '+scanned+' registros de Audit escaneados.',false,false);setStatus('0 registros');}
+    else{alertMsg('Encontradas '+allRows.length+' tentativa(s) de cartão não cadastrado.',true,false);setStatus(allRows.length+' registros');}
+    render();
+  }catch(e){
+    console.error('[UK] load error',e);
+    setStatus('Erro');
+    alertMsg('Erro ao carregar: '+(e&&(e.message||e.name)||'desconhecido'),false,true);
+  }
 }
+function inferPlate(d){var p=(d.licensePlate||'').trim();if(p)return p;var n=(d.name||'').trim();var m=n.match(/^([^|]+)\s*\|/);if(m&&m[1])return m[1].trim();return n||d.id;}
+function extractSerial(txt){var m=txt.match(/\b\d{6,20}\b/);return m?m[0]:'';}
+function extractPlate(txt){var m=txt.match(/\b[A-Z]{3}\d[A-Z0-9]\d{2}\b/);return m?m[0]:'';}
+function findDeviceByPlate(plate){if(!plate)return null;var k=Object.keys(devices);for(var i=0;i<k.length;i++){var d=devices[k[i]];if(d.plate===plate||(d.name||'').indexOf(plate)!==-1)return d;}return null;}
 
-// ── DATE RANGE ──
-function getRange() {
-  var now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (activePreset === 'today') return { from: today, to: new Date(today.getTime() + 86399999) };
-  if (activePreset === '7d')    return { from: new Date(today.getTime() - 6*864e5), to: now };
-  if (activePreset === '30d')   return { from: new Date(today.getTime() - 29*864e5), to: now };
-  if (activePreset === '90d')   return { from: new Date(today.getTime() - 89*864e5), to: now };
-  var fv = document.getElementById('date-from').value;
-  var tv = document.getElementById('date-to').value;
-  return {
-    from: fv ? new Date(fv) : new Date(today.getTime() - 29*864e5),
-    to:   tv ? new Date(tv + 'T23:59:59') : now
-  };
-}
-
-// ── LOCAL FILTERS ──
-function populateFilters() {
-  var faults = [];
-  var seen = {};
-  var current = document.getElementById('sel-fault').value;
-  getScopedData().forEach(function(r){ if(r.diagnosticLabel && !seen[r.diagnosticLabel]){ seen[r.diagnosticLabel]=1; faults.push(r.diagnosticLabel); } });
-  faults.sort();
-  var sel = document.getElementById('sel-fault');
-  sel.innerHTML = '<option value="">Todas as falhas</option>' + faults.map(function(f){ return '<option value="'+esc(f)+'">'+esc(f)+'</option>'; }).join('');
-  sel.value = current && seen[current] ? current : '';
-}
-
-function applyFilters() {
-  populateFilters();
-  var srch = document.getElementById('inp-search').value.toLowerCase();
-  var fault = document.getElementById('sel-fault').value;
-  filteredData = getScopedData().filter(function(r){
-    if (fault && r.diagnosticLabel !== fault) return false;
-    if (srch) {
-      var blob = [r.devicePlate, r.deviceName, r.diagnosticLabel, r.diagnosticName, r.diagnosticCode, r.failureMode].join(' ').toLowerCase();
-      if (blob.indexOf(srch) === -1) return false;
-    }
+function apply(){
+  var g=$('groupFilter')?$('groupFilter').value:'';
+  var d=$('deviceFilter')?$('deviceFilter').value:'';
+  var q=($('queryFilter')&&$('queryFilter').value||'').toLowerCase().trim();
+  filtered=allRows.filter(function(r){
+    if(d && r.deviceId!==d) return false;
+    if(g && !(deviceGroupIds[r.deviceId]||[]).some(function(id){return id===g;})) return false;
+    if(q){var blob=(r.plate+' '+r.serial+' '+r.deviceName).toLowerCase();if(blob.indexOf(q)===-1)return false;}
     return true;
   });
-  filteredData.sort(function(a,b){
-    var va = a[sortCol], vb = b[sortCol];
-    if (va instanceof Date) return sortDir * (va - vb);
-    var na = parseFloat(va), nb = parseFloat(vb);
-    if (!isNaN(na) && !isNaN(nb)) return sortDir*(na-nb);
-    return sortDir * String(va||'').localeCompare(String(vb||''));
-  });
-  currentPage = 1;
-  set('total-count', filteredData.length.toLocaleString('pt-BR'));
-  renderKPIs(); renderCharts(); renderTable();
-  updateInfoBar();
+  render();
 }
 
-// ── KPIs ──
-function renderKPIs() {
-  var n = filteredData.length;
-  set('kv-total', n.toLocaleString('pt-BR'));
-  set('ks-total', n !== allData.length ? 'de '+allData.length.toLocaleString('pt-BR')+' total' : 'registros no período');
-  set('kv-dev', new Set(filteredData.map(function(r){return r.devicePlate;})).size);
-  set('kv-types', new Set(filteredData.map(function(r){return r.serial;})).size);
-  // reuse kv-types label? table uses kv-types as "Cartões não cadastrados"
+function render(){
+  $('countBox').textContent=filtered.length.toLocaleString('pt-BR');
+  var serials={},plates={};
+  filtered.forEach(function(r){serials[r.serial]=1;if(r.plate&&r.plate!=='—')plates[r.plate]=1;});
+  var uniqCards=Object.keys(serials).length, uniqDev=Object.keys(plates).length;
+  var last=filtered[0];
+  var cards=[['Tentativas',filtered.length,'registros no período','var(--red)'],['Cartões não cadastrados',uniqCards,'seriais distintos','var(--orange)'],['Veículos afetados',uniqDev,'veículos distintos','var(--blue)'],['Última tentativa',last?fmtDate(last.dateTime):'—','','var(--gray)']];
+  $('kpisBox').innerHTML=cards.map(function(r){return '<div class="kpi"><span>'+r[0]+'</span><b style="color:'+r[3]+';font-size:'+(r[0]==='Última tentativa'?'14px':'30px')+'">'+esc(r[1])+'</b><small>'+esc(r[2])+'</small></div>';}).join('');
+
+  renderTable();
+  renderSummary(uniqCards,uniqDev);
+  renderMap();
 }
-
-function renderGroupRanking() {
-  var list = document.getElementById('group-ranking-list');
-  var sub = document.getElementById('ks-group-ranking');
-  if (!list || !sub) return;
-
-  var counts = {};
-  filteredData.forEach(function(r) {
-    var device = deviceMap[r.deviceId] || {};
-    var groupName = getPrimaryGroupName(device);
-    var weight = r.count != null ? parseInt(r.count, 10) : 1;
-    if (!weight || weight < 1) weight = 1;
-    counts[groupName] = (counts[groupName] || 0) + weight;
-  });
-
-  var items = Object.entries(counts).sort(function(a, b) { return b[1] - a[1]; });
-  if (!items.length) {
-    sub.textContent = 'Sem dados por grupo';
-    list.innerHTML = '<div class="kpi-sub" style="color:var(--text3);">—</div>';
-    return;
-  }
-
-  var visible = items.slice(0, 3);
-  sub.textContent = items.length > 3 ? ('Top 3 de ' + items.length + ' grupos') : (items.length + ' grupo' + (items.length === 1 ? '' : 's'));
-  var total = items.reduce(function(sum, item) { return sum + item[1]; }, 0) || 1;
-  var max = visible[0][1] || 1;
-
-  list.innerHTML = visible.map(function(item, idx) {
-    var share = Math.round((item[1] / total) * 100);
-    var width = Math.max(6, Math.round((item[1] / max) * 100));
-    return '<div class="rank-row">'
-      + '<div class="rank-head">'
-      + '<span class="rank-name">' + (idx + 1) + '. ' + esc(item[0]) + '</span>'
-      + '<span class="rank-meta">' + item[1].toLocaleString('pt-BR') + ' falhas • ' + share + '%</span>'
-      + '</div>'
-      + '<div class="rank-track"><div class="rank-fill" style="width:' + width + '%"></div></div>'
-      + '</div>';
-  }).join('');
+function renderSummary(uniqCards,uniqDev){
+  var byCard={};filtered.forEach(function(r){byCard[r.serial]=(byCard[r.serial]||0)+1;});
+  var rows=Object.entries(byCard).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  var max=rows.length?rows[0][1]:1;
+  $('summaryBox').innerHTML=rows.length?('<div style="display:grid;gap:8px">'+rows.map(function(r){
+    var w=Math.max(6,Math.round(r[1]/max*100));
+    return '<div><div style="display:flex;justify-content:space-between"><span class="mono">'+esc(r[0])+'</span><b>'+r[1]+'</b></div><div style="height:10px;background:#eaf4fb;border-radius:20px;overflow:hidden;margin-top:3px"><div style="height:10px;width:'+w+'%;background:var(--orange);border-radius:20px"></div></div></div>';
+  }).join('')+'</div>'):'<div>Sem dados no período.</div>';
 }
-
-// ── CHARTS ──
-function renderCharts() {
-  renderTypeChart(); renderDevChart(); renderTimeChart();
-}
-function dc(c){ if(c){ try{c.destroy();}catch(e){} } }
-
-function renderTypeChart(){
-  var counts={};
-  filteredData.forEach(function(r){ if(r.diagnosticLabel && r.diagnosticLabel!=='—') counts[r.diagnosticLabel]=(counts[r.diagnosticLabel]||0)+1; });
-  var sorted=Object.entries(counts).sort(function(a,b){return b[1]-a[1];}).slice(0,10);
-  dc(chType);
-  chType = new Chart(document.getElementById('ch-type'),{
-    type:'bar',
-    data:{
-      labels: sorted.map(function(x){return x[0].length>24?x[0].slice(0,24)+'…':x[0];}),
-      datasets:[{data:sorted.map(function(x){return x[1];}), backgroundColor:sorted.map(function(_,i){return COLORS[i%COLORS.length]+'cc';}), borderRadius:4, borderSkipped:false}]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false, indexAxis:'y',
-      plugins:{legend:{display:false},tooltip:{callbacks:{title:function(i){return sorted[i[0].dataIndex][0];}}}},
-      scales:{
-        x:{ticks:{color:'#8b9099',font:{size:10}},grid:{color:'rgba(255,255,255,.05)'}},
-        y:{ticks:{color:'#8b9099',font:{size:10}},grid:{display:false}}
-      }
-    }
-  });
-}
-
-function renderDevChart(){
-  var counts={};
-  filteredData.forEach(function(r){ var n=r.devicePlate!=='—'?r.devicePlate:(r.deviceName!=='—'?r.deviceName:r.deviceId); counts[n]=(counts[n]||0)+1; });
-  var sorted=Object.entries(counts).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
-  dc(chDev);
-  chDev = new Chart(document.getElementById('ch-dev'),{
-    type:'doughnut',
-    data:{
-      labels:sorted.map(function(x){return x[0].length>22?x[0].slice(0,22)+'…':x[0];}),
-      datasets:[{data:sorted.map(function(x){return x[1];}), backgroundColor:sorted.map(function(_,i){return COLORS[i%COLORS.length]+'cc';}), borderWidth:0, hoverOffset:4}]
-    },
-    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'right',labels:{color:'#8b9099',font:{size:10},boxWidth:10,padding:8}}}}
-  });
-}
-
-function renderTimeChart(){
-  var byDay={};
-  filteredData.forEach(function(r){
-    if(!r.dateTime) return;
-    var d=r.dateTime.toISOString().slice(0,10);
-    byDay[d]=(byDay[d]||0)+1;
-  });
-  var sorted=Object.entries(byDay).sort(function(a,b){return a[0].localeCompare(b[0]);});
-  dc(chTime);
-  chTime = new Chart(document.getElementById('ch-time'),{
-    type:'line',
-    data:{
-      labels:sorted.map(function(x){ return new Date(x[0]+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}); }),
-      datasets:[{data:sorted.map(function(x){return x[1];}), borderColor:'#00d4ff', backgroundColor:'rgba(0,212,255,.08)', fill:true, tension:.3, pointRadius:3, pointBackgroundColor:'#00d4ff', borderWidth:1.5}]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{ticks:{color:'#8b9099',font:{size:10},maxRotation:45},grid:{color:'rgba(255,255,255,.05)'}},
-        y:{ticks:{color:'#8b9099',font:{size:10}},grid:{color:'rgba(255,255,255,.05)'},beginAtZero:true}
-      }
-    }
-  });
-}
-
-// ── TABLE ──
-function fmtD(d){ if(!d)return'—'; return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
-
 function renderTable(){
-  var total=filteredData.length, pages=Math.max(1,Math.ceil(total/PAGE));
-  if(currentPage>pages) currentPage=pages;
-  var start=(currentPage-1)*PAGE, slice=filteredData.slice(start,start+PAGE);
-  var tbody=document.getElementById('tbody');
-  if(!slice.length){
-    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--text3);">Nenhum registro</td></tr>';
-  } else {
-    tbody.innerHTML=slice.map(function(r){
-      var plate=r.devicePlate.length>22?r.devicePlate.slice(0,22)+'…':r.devicePlate;
-      return '<tr>'
-        +'<td>'+fmtD(r.dateTime)+'</td>'
-        +'<td title="'+esc(r.devicePlate)+'"><strong style="color:var(--text);">'+esc(plate)+'</strong></td>'
-        +'<td><span class="code">'+esc(r.serial)+'</span></td>'
-        +'<td><span class="bdg bdg-w">Não cadastrado</span></td>'
-        +'<td><span class="code">Cadastrar no Geotab</span></td>'
-        +'</tr>';
-    }).join('');
-  }
-  set('tbl-count', total.toLocaleString('pt-BR')+' registro'+(total!==1?'s':''));
-  set('pag-info', (start+1)+'–'+Math.min(start+PAGE,total)+' de '+total);
-  renderPag(pages);
+  if(!filtered.length){$('tableBox').innerHTML='<div style="padding:25px;text-align:center;color:var(--mut)">Nenhum registro.</div>';return;}
+  $('tableBox').innerHTML='<table><thead><tr><th>Data/Hora</th><th>Veículo (Placa)</th><th>Cartão (Serial)</th><th>Status</th><th>Ação</th></tr></thead><tbody>'+
+    filtered.map(function(r){
+      return '<tr><td>'+fmtDate(r.dateTime)+'</td><td><b style="color:var(--txt)">'+esc(r.plate)+'</b></td><td><span class="mono">'+esc(r.serial)+'</span></td><td><span class="badge riskb">Não cadastrado</span></td><td><span class="badge warnb">Cadastrar no Geotab</span></td></tr>';
+    }).join('')+'</tbody></table>';
 }
-
-function renderPag(pages){
-  var el=document.getElementById('pag-btns'), h='';
-  h+='<button class="pbtn2" onclick="goPage('+(currentPage-1)+')" '+(currentPage===1?'disabled':'')+'><i class="ti ti-chevron-left" style="font-size:11px;"></i></button>';
-  var rng=[];
-  if(pages<=7){for(var i=1;i<=pages;i++)rng.push(i);}
-  else{
-    rng.push(1);
-    if(currentPage>3)rng.push('…');
-    for(var j=Math.max(2,currentPage-1);j<=Math.min(pages-1,currentPage+1);j++)rng.push(j);
-    if(currentPage<pages-2)rng.push('…');
-    rng.push(pages);
-  }
-  rng.forEach(function(p){
-    if(p==='…') h+='<button class="pbtn2" disabled>…</button>';
-    else h+='<button class="pbtn2 '+(p===currentPage?'on':'')+'" onclick="goPage('+p+')">'+p+'</button>';
-  });
-  h+='<button class="pbtn2" onclick="goPage('+(currentPage+1)+')" '+(currentPage===pages?'disabled':'')+'><i class="ti ti-chevron-right" style="font-size:11px;"></i></button>';
-  el.innerHTML=h;
+function initMap(){
+  if(!window.L||!$('mapBox'))return;
+  map=L.map('mapBox').setView([-15.8,-47.9],4);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OSM'}).addTo(map);
+  layer=L.layerGroup().addTo(map);
+  setTimeout(function(){map.invalidateSize();},300);
 }
-
-function goPage(p){
-  var pages=Math.ceil(filteredData.length/PAGE);
-  if(p<1||p>pages)return;
-  currentPage=p; renderTable();
-}
-
-// ── STATE MACHINE ──
-function showState(s){
-  ['st-initial','st-loading','st-empty','st-error'].forEach(function(id){ document.getElementById(id).style.display='none'; });
-  ['kpi-grid','charts-grid','tcard'].forEach(function(id){ document.getElementById(id).style.display='none'; });
-  if(s==='data'){
-    ['kpi-grid','charts-grid','tcard'].forEach(function(id){ document.getElementById(id).style.display=''; });
-  } else {
-    document.getElementById('st-'+s).style.display='';
-  }
-}
-function setLoadMsg(m){ document.getElementById('st-load-msg').textContent=m; }
-
-function setUiStatus(label, state) {
-  var lbl = document.getElementById('status-label');
-  var dot = document.querySelector('#status-pill .status-dot');
-  if (lbl) lbl.textContent = label;
-  if (dot) dot.className = 'status-dot ' + (state || '');
-}
-
-function updateInfoBar() {
-  var p = document.getElementById('info-period');
-  var g = document.getElementById('info-group');
-  var v = document.getElementById('info-vehicle');
-  var f = document.getElementById('info-fault');
-  var s = document.getElementById('info-search');
-  if (p) {
-    var rng = getRange();
-    p.textContent = rng.from.toLocaleDateString('pt-BR') + ' → ' + rng.to.toLocaleDateString('pt-BR');
-  }
-  if (g) {
-    var selGroup = document.getElementById('sel-group');
-    var groupOpt = selGroup && selGroup.selectedOptions && selGroup.selectedOptions[0];
-    g.textContent = groupOpt && groupOpt.value ? groupOpt.textContent : 'Todos';
-  }
-  if (v) {
-    var selDev = document.getElementById('sel-device');
-    var opt = selDev && selDev.selectedOptions && selDev.selectedOptions[0];
-    v.textContent = opt && opt.value ? opt.textContent : 'Todos';
-  }
-  if (f) {
-    var selFault = document.getElementById('sel-fault');
-    f.textContent = selFault && selFault.value ? selFault.value : 'Todas';
-  }
-  if (s) {
-    var q = document.getElementById('inp-search').value.trim();
-    s.textContent = q ? q : '—';
-  }
-}
-
-function inferPlateLabel(device) {
-  var plate = (device && device.licensePlate ? String(device.licensePlate) : '').trim();
-  if (plate) return plate;
-  var name = (device && device.name ? String(device.name) : '').trim();
-  var match = name.match(/^([^|]+)\s*\|/);
-  if (match && match[1]) return match[1].trim();
-  return name || (device && device.id ? String(device.id) : '—');
-}
-
-function inferDiagnosticName(raw, info) {
-  var name = (info && info.name ? String(info.name) : '') || (raw && raw.name ? String(raw.name) : '') || (info && info.description ? String(info.description) : '') || (raw && raw.description ? String(raw.description) : '');
-  return name.trim() || (info && info.code != null ? 'Código ' + info.code : (raw && raw.code != null ? 'Código ' + raw.code : '—'));
-}
-
-function inferDiagnosticLabel(raw, info) {
-  var name = inferDiagnosticName(raw, info);
-  var code = (info && info.code != null ? String(info.code) : (raw && raw.code != null ? String(raw.code) : '')).trim();
-  if (code && name && name.indexOf(code) === -1) return code + ' - ' + name;
-  return name;
-}
-
-// ── PRESET ──
-function setPreset(p){
-  activePreset=p;
-  document.querySelectorAll('.pbtn').forEach(function(b){ b.classList.toggle('active', b.dataset.p===p); });
-  document.getElementById('custom-dates').style.display = p==='custom' ? 'flex' : 'none';
-  updateInfoBar();
-}
-
-// ── EXPORT ──
-document.getElementById('btn-export').addEventListener('click', function(){
-  if(!filteredData.length)return;
-  var cols=['devicePlate','deviceName','dateTime','diagnosticLabel','diagnosticCode','failureMode','count'];
-  var hdr=['Placa','Nome','Data/Hora','Tipo de falha','Código','Modo de falha','Ocorrências'];
-  var rows=filteredData.map(function(r){
-    return cols.map(function(c){ var v=c==='dateTime'?fmtD(r[c]):String(r[c]??''); return v.indexOf('\t')>-1?'"'+v+'"':v; }).join('\t');
-  });
-  var blob=new Blob([hdr.join('\t')+'\n'+rows.join('\n')],{type:'text/tab-separated-values'});
-  var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='falhas_'+new Date().toISOString().slice(0,10)+'.tsv'; a.click();
-});
-
-// ── UI EVENTS ──
-function setupUI(){
-  document.querySelectorAll('.pbtn').forEach(function(b){ b.addEventListener('click',function(){ setPreset(b.dataset.p); }); });
-  document.getElementById('btn-fetch').addEventListener('click', fetchFaults);
-  document.getElementById('sel-group').addEventListener('change', function(){
-    populateDeviceFilter();
-    if (allData.length) applyFilters();
-    else updateInfoBar();
-  });
-  document.getElementById('sel-device').addEventListener('change', function(){
-    if (allData.length) applyFilters();
-    else updateInfoBar();
-  });
-  document.getElementById('inp-search').addEventListener('input', applyFilters);
-  document.getElementById('sel-fault').addEventListener('change', applyFilters);
-  document.getElementById('btn-clear').addEventListener('click',function(){
-    document.getElementById('inp-search').value='';
-    document.getElementById('sel-group').value='';
-    document.getElementById('sel-device').value='';
-    populateDeviceFilter();
-    document.getElementById('sel-fault').value='';
-    applyFilters();
-  });
-  document.querySelectorAll('thead th[data-col]').forEach(function(th){
-    th.addEventListener('click',function(){
-      var col=th.dataset.col;
-      if(sortCol===col) sortDir*=-1; else{ sortCol=col; sortDir=-1; }
-      applyFilters();
-      document.querySelectorAll('thead th .si').forEach(function(s){s.textContent='↕';});
-      th.querySelector('.si').textContent = sortDir===1?'↑':'↓';
+function renderMap(){
+  if(!map){initMap();}
+  if(!layer)return;
+  layer.clearLayers();
+  // usa última posição conhecida via DeviceStatusInfo para veículos com tentativas
+  var ids=Object.keys(filtered.reduce(function(acc,r){if(r.deviceId)acc[r.deviceId]=1;return acc;},{}));
+  if(!ids.length)return;
+  call('DeviceStatusInfo',{}).then(function(list){
+    (list||[]).forEach(function(s){
+      var id=s.device&&s.device.id;if(!id||ids.indexOf(id)===-1)return;
+      var lat=s.latitude!=null?Number(s.latitude):null,lng=s.longitude!=null?Number(s.longitude):null;
+      if(lat==null||lng==null||isNaN(lat)||isNaN(lng))return;
+      var dev=devices[id]||{};
+      var m=L.circleMarker([lat,lng],{radius:9,fillColor:'#ef4444',color:'#fff',weight:1.5,fillOpacity:.88});
+      m.bindPopup('<b>'+esc(dev.plate||dev.name||id)+'</b>');
+      layer.addLayer(m);
     });
-  });
+    var pts=[];layer.eachLayer(function(l){pts.push(l.getLatLng());});
+    if(pts.length){map.setView([pts.reduce(function(a,p){return a+p.lat;},0)/pts.length,pts.reduce(function(a,p){return a+p.lng;},0)/pts.length],6);}
+  }).catch(function(){});
 }
 
-// ── HELPERS ──
-function set(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; }
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-function openModal(serial){ document.getElementById('modal-card').textContent='Cartão: '+serial; document.getElementById('modal-bg').style.display='flex'; document.getElementById('modal-bg').dataset.serial=serial; }
-function closeModal(){ document.getElementById('modal-bg').style.display='none'; }
-document.getElementById('modal-cancel').addEventListener('click', closeModal);
-document.getElementById('modal-save').addEventListener('click', function(){
-  var serial = document.getElementById('modal-bg').dataset.serial;
-  var uid = document.getElementById('modal-user').value;
-  var u = userMap[uid];
-  if (!uid) { alert('Selecione um usuário'); return; }
-  _api.call('Get', { typeName: 'User', search: { id: uid } }, function(res){
-    var user = (res && res[0]) ? res[0] : u;
-    var keys = Array.isArray(user.keys) ? user.keys.slice() : [];
-    var exists = keys.some(function(k){ return k && k.serialNumber === serial; });
-    if (!exists) keys.push({ serialNumber: serial, driverKeyType: 'Nfc' });
-    user.keys = keys;
-    if (!user.id) user.id = uid;
-    user.userModifiedInfo = { modifiedUserName: (_state && _state.userName) ? _state.userName : (user.name || 'addin') };
-    _api.call('Set', { typeName: 'User', entity: user }, function(){ alert('Cartão vinculado!'); closeModal(); }, function(e){ alert('Erro: ' + JSON.stringify(e)); });
-  }, function(e){ alert('Erro ao buscar usuário: ' + JSON.stringify(e)); });
-});
-
-// ── MOCK (dev fora do Geotab) ──
-if (isMockMode) {
-  console.warn('[FD] mock mode');
-  var mockApi={
-    call:function(m,p,ok,err){
-      if(p.typeName==='Group') ok([
-        {id:'g1',name:'Operacao Norte'},
-        {id:'g2',name:'Operacao Sul'}
-      ]);
-      else if(p.typeName==='Device') ok([
-        {id:'b1',name:'TEV9A14 | Daily 35', groups:[{id:'g1',name:'Operacao Norte'}]},
-        {id:'b2',name:'FLT001 | Sprinter 415', groups:[{id:'g1',name:'Operacao Norte'}]},
-        {id:'b3',name:'TEV8B22 | Transit 350', groups:[{id:'g2',name:'Operacao Sul'}]}
-      ]);
-      else if(p.typeName==='Diagnostic') ok([{id:'d1',name:'GPS failure fault',code:298},{id:'d2',name:'Engine overheat fault',code:512},{id:'d3',name:'Battery low voltage fault',code:101},{id:'d4',name:'Transmission fault',code:773},{id:'d5',name:'Door sensor fault',code:405}]);
-      else if(p.typeName==='Audit') ok([
-        {name:'Unassigned driver key',comment:'Please add the driver/passenger key 1234567890, as it is currently unassigned. The key was used on vehicle ABC1D23',dateTime:'2026-11-09T10:17:57Z'},
-        {name:'Unassigned driver key',comment:'Please add the driver/passenger key 99887766, as it is currently unassigned. The key was used on vehicle ABC1234',dateTime:'2026-11-08T09:00:00Z'}
-      ]);
-      else if(p.typeName==='User') ok([
-        {id:'u1',name:'motorista1@exemplo.com',firstName:'Motorista',lastName:'Um',isDriver:true,keys:[]},
-        {id:'u2',name:'motorista2@exemplo.com',firstName:'Motorista',lastName:'Dois',isDriver:true,keys:[]}
-      ]);
-    }
-  };
-  rootScope.geotab.addin.unassigned_keys(mockApi, {});
+function init(api){
+  try{
+    apiRef=api;shell();setStatus('Pronto');
+    load(api);
+  }catch(e){
+    console.error(e);var r=$('app');if(r)r.innerHTML='<div style="padding:20px;color:#991b1b">Erro ao iniciar: '+esc(e.message||e)+'</div>';
+  }
 }
+if(!window.geotab)window.geotab={addin:{}};if(!window.geotab.addin)window.geotab.addin={};
+window.geotab.addin.unassigned_keys=function(){return{initialize:function(api,state,cb){try{init(api)}catch(e){console.error(e);}if(cb)cb();},focus:function(){if(map)setTimeout(function(){map.invalidateSize();},200);},blur:function(){}};};
+// dev fora do Geotab
+if(typeof window.geotab==='undefined'||!window.geotab.addin){window.geotab={addin:{}};}
+})();
 </script>
 </body>
 </html>

@@ -1,22 +1,17 @@
 {
   "name": "unassigned_keys",
   "supportEmail": "bruno_felisbino@hotmail.com",
-  "version": "1.0.1",
-  "isSigned": false,
+  "version": "1.0.2",
   "items": [
     {
-      "page": "customReports",
-      "title": {
-        "pt-BR": "Chaves Não Cadastradas",
-        "en": "Unassigned Keys"
-      },
+      "url": "https://brunofelisbino.github.io/unassigned_keys_addin/unassigned_keys.html?v=3",
+      "path": "ActivityLink/",
       "menuName": {
-        "pt-BR": "Chaves Não Cadastradas",
-        "en": "Unassigned Keys"
+        "en": "Unassigned Keys",
+        "pt-BR": "Chaves Não Cadastradas"
       },
-      "path": "ActivityLink",
-      "url": "https://brunofelisbino.github.io/unassigned_keys_addin/unassigned_keys.html?v=2",
       "svgIcon": "https://brunofelisbino.github.io/unassigned_keys_addin/unassigned_keys_icon.svg"
     }
-  ]
+  ],
+  "files": {}
 }
