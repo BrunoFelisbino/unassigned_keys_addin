@@ -383,9 +383,9 @@
     <!-- período -->
     <span class="flabel">Período</span>
     <div class="presets">
-      <button class="pbtn" data-p="today">Hoje</button>
+      <button class="pbtn active" data-p="today">Hoje</button>
       <button class="pbtn" data-p="7d">7 dias</button>
-      <button class="pbtn active" data-p="30d">30 dias</button>
+      <button class="pbtn" data-p="30d">30 dias</button>
       <button class="pbtn" data-p="90d">90 dias</button>
       <button class="pbtn" data-p="custom">Personalizado</button>
     </div>
@@ -592,9 +592,9 @@ if (isMockMode) {
 
 rootScope.geotab.addin.unassigned_keys = function(api, state) {
   _api = api; _state = state;
-  loadLookups(function(){ setUiStatus('Pronto', 'green'); });
+  loadLookups(fetchAudit);
   setupUI();
-  setPreset('30d');
+  setPreset('today');
   setUiStatus('Pronto', 'green');
 };
 
