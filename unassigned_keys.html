@@ -320,6 +320,21 @@ function sendAuthKey(deviceId,key){
     apiRef.call('Add',{typeName:'TextMessage',entity:{device:{id:deviceId},isDirectionToVehicle:true,messageContent:{contentType:'DriverAuthList',driverKey:dk,addToAuthList:true,clearAuthList:false}}},ok,err);
   });
 }
+async function ensureAuthListEnabled(deviceId){
+  if(!apiRef||!deviceId)return false;
+  try{
+    var r=await call('Device',{id:deviceId});
+    var dev=(Array.isArray(r)?r[0]:r);
+    if(!dev)return false;
+    var has=false;
+    if(dev.customParameters){for(var i=0;i<dev.customParameters.length;i++){var p=dev.customParameters[i];if(p.bytes==='CA=='&&p.offset===164&&p.description==='Enable Authorised Driver List'&&p.isEnabled===true){has=true;break;}}}
+    if(has)return true;
+    if(dev.customParameters){for(var i=0;i<dev.customParameters.length;i++){var p=dev.customParameters[i];if(p.bytes==='CA=='&&p.offset===164&&p.description==='Enable Authorised Driver List'){p.isEnabled=true;has=true;break;}}}
+    if(!has){dev.customParameters=dev.customParameters||[];dev.customParameters.push({bytes:'CA==',description:'Enable Authorised Driver List',isEnabled:true,offset:164});}
+    await invoke('Set',{typeName:'Device',entity:dev});
+    return true;
+  }catch(e){console.warn('[UK] falha ao habilitar authlist',e);return false;}
+}
 async function linkDrivers(deviceId,driverIds,btn){
   if(!apiRef){alertMsg('Abra dentro do MyGeotab para vincular.',false,true);return;}
   var keys=[],names=[],missing=[];
@@ -331,6 +346,8 @@ async function linkDrivers(deviceId,driverIds,btn){
   if(!keys.length){alertMsg('Nenhum cartão cadastrado (User.keys) para vincular'+(missing.length?': '+missing.join(', '):'.'),false,true);return;}
   var msg='Enviar '+keys.length+' cartão(ões)'+(driverIds.length>1?(' de '+names.length+' motorista(s)'):'')+' para a driver list do veículo?\n\nA authlist precisa estar habilitada no GO e existe limite de cartões por equipamento.';
   if(!window.confirm(msg))return;
+  var enabled=await ensureAuthListEnabled(deviceId);
+  if(!enabled)alertMsg('Nao foi possivel habilitar a authlist automaticamente neste dispositivo; tentando envio mesmo assim.',false,true);
   var old=btn.textContent;btn.disabled=true;btn.textContent='Enviando...';
   var okCount=0,fail=[],successByDriver={};
   for(var i=0;i<keys.length;i++){
