@@ -7,7 +7,7 @@ Add-in para **MyGeotab** que audita o uso de cartões/chaves de motorista em ve�
 - cartões **cadastrados, mas sem autorização** para o veículo em que foram usados;
 - KPIs, mapa dos veículos e contagem de **validações por dia**.
 
-> Versão atual: **1.1.2** · Licença **MIT** · Autor: Bruno Felisbino
+> Versão atual: **1.1.3** · Licença **MIT** · Autor: Bruno Felisbino
 
 ---
 
