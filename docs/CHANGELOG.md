@@ -4,6 +4,15 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.0.7] — 2026-11-09
+
+### Alterado
+- A seção "Leituras válidas" passou a exibir apenas as leituras **autorizadas**; as **sem autorização** ficam apenas na seção própria (fim da duplicação).
+- KPI "Leituras válidas" agora detalha "N autorizadas • M fora do grupo".
+
+### Adicionado
+- Tooltip no status "Não autorizado" mostrando os grupos do motorista e do veículo (diagnóstico).
+
 ## [1.0.6] — 2026-11-09
 
 ### Adicionado

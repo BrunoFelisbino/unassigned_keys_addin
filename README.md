@@ -7,7 +7,7 @@ Add-in para **MyGeotab** que audita o uso de cartões/chaves de motorista em ve�
 - cartões **cadastrados, mas sem autorização** para o veículo em que foram usados;
 - KPIs, mapa dos veículos e contagem de **validações por dia**.
 
-> Versão atual: **1.0.6** · Licença **MIT** · Autor: Bruno Felisbino
+> Versão atual: **1.0.7** · Licença **MIT** · Autor: Bruno Felisbino
 
 ---
 
@@ -49,8 +49,8 @@ URLs publicadas:
 - **Resumo** — barras com os cartões não cadastrados mais usados.
 - **Tentativas de cartões não cadastrados** — tabela com Data/Hora, Placa, Cartão (serial), Status.
 - **Viagens validadas por dia** — barras por dia com a contagem de leituras válidas.
-- **Leituras válidas (cartões cadastrados)** — **top 10 placas** aglomeradas; clique na placa para expandir os detalhes (Data/Hora, Cartão, Motorista, E-mail, Status).
-- **Cartões cadastrados, mas sem autorização no veículo** — mesmo formato, apenas os casos fora do grupo.
+- **Leituras válidas autorizadas (cartões cadastrados)** — **top 10 placas** aglomeradas; clique na placa para expandir os detalhes (Data/Hora, Cartão, Motorista, E-mail, Status).
+- **Cartões cadastrados, mas sem autorização no veículo** — mesmo formato, com os casos fora do grupo (não se repetem na seção de autorizadas; o tooltip do status mostra os grupos do motorista e do veículo).
 
 ### Filtros
 

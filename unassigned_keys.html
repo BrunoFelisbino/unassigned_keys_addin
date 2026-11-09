@@ -48,8 +48,8 @@ function shell(){
       '<div class="panel"><div class="pt">Resumo</div><div id="summaryBox" style="color:var(--mut);font-size:12px">—</div></div></div>'+
     '<div class="panel"><div class="pt">Tentativas de cartões não cadastrados</div><div id="tableBox"></div></div>'+
     '<div class="panel"><div class="pt">Viagens validadas por dia (cartões cadastrados)</div><div id="dailyBox" style="color:var(--mut);font-size:12px">—</div></div>'+
-    '<div class="panel"><div class="pt">Leituras válidas (cartões cadastrados)</div><div id="validTableBox"></div></div>'+
-    '<div class="panel"><div class="pt">Cartões cadastrados, mas sem autorização no veículo</div><div id="unauthTableBox"></div></div>'+
+    '<div class="panel"><div class="pt">Leituras válidas autorizadas (cartões cadastrados)</div><div id="validTableBox"></div></div>'+
+    '<div class="panel"><div class="pt">Cartões cadastrados, mas sem autorização no veículo</div><div style="font-size:11px;color:var(--mut);margin:-6px 0 10px">Regra: grupos do motorista × grupos do veículo. Passe o mouse no status para ver os grupos.</div><div id="unauthTableBox"></div></div>'+
     '<footer style="text-align:center;font-size:11px;color:var(--mut);padding:8px 0">Projeto independente • Licença MIT</footer>';
   $('refreshBtn').onclick=function(){load(apiRef);};
   $('periodFilter').onchange=apply;
@@ -144,6 +144,8 @@ async function load(api){
         serial:keysText(u.keys),
         serialAll:(u.keys||[]).join(', '),
         authorized:isAuthorized(drv,did),
+        driverGroupNames:groupNames(u.groupIds),
+        deviceGroupNames:groupNames(deviceGroupIds[did]||[]),
         type:d.type||''
       });
     });
@@ -167,6 +169,7 @@ function extractPlate(txt){var m=txt.match(/\b[A-Z]{3}\d[A-Z0-9]\d{2}\b/);return
 function findDeviceByPlate(plate){if(!plate)return null;var k=Object.keys(devices);for(var i=0;i<k.length;i++){var d=devices[k[i]];if(d.plate===plate||(d.name||'').indexOf(plate)!==-1)return d;}return null;}
 function authGroups(ids){return (ids||[]).filter(function(id){var g=groups[id];if(!g)return true;return g.name!=='GroupCompanyId'&&g.id!=='GroupCompanyId';});}
 function keysText(keys){if(!keys||!keys.length)return '—';return keys[0]+(keys.length>1?' +'+(keys.length-1):'');}
+function groupNames(ids){return (ids||[]).map(function(id){var g=groups[id];return (g&&g.name)||id;}).filter(Boolean).join(', ');}
 function isAuthorized(driverId,deviceId){
   var u=users[driverId];if(!u)return true;
   var ug=authGroups(u.groupIds),dg=authGroups(deviceGroupIds[deviceId]||[]);
@@ -203,13 +206,14 @@ function render(){
   var vDriversN=Object.keys(vDrivers).length, dayCount=Object.keys(days).length;
   var vLast=filteredValid[0];
   var avg=dayCount?(filteredValid.length/dayCount):0;
+  var authN=filteredValid.length-unauth;
 
   var cards=[
     ['Tentativas',filtered.length,'registros no período','var(--red)'],
     ['Cartões não cadastrados',uniqCards,'seriais distintos','var(--orange)'],
     ['Veículos afetados',uniqDev,'veículos distintos','var(--blue)'],
     ['Última tentativa',last?fmtDate(last.dateTime):'—','','var(--gray)'],
-    ['Leituras válidas',filteredValid.length,'cartões cadastrados','var(--green)'],
+    ['Leituras válidas',filteredValid.length,authN+' autorizadas • '+unauth+' fora do grupo','var(--green)'],
     ['Sem autorização',unauth,'cadastrados fora do grupo','var(--yellow)'],
     ['Motoristas distintos',vDriversN,'motoristas','var(--blue)'],
     ['Média validações/dia',avg?avg.toFixed(1):'0','por dia no período','var(--green)'],
@@ -237,14 +241,15 @@ function renderDaily(days){
 }
 function renderAgg(boxId,rows,mode){
   var box=$(boxId);if(!box)return;
-  if(!rows.length){box.innerHTML='<div style="padding:25px;text-align:center;color:var(--mut)">'+(mode==='unauth'?'Nenhum cartão cadastrado fora do grupo do veículo.':'Nenhuma leitura válida.')+'</div>';return;}
+  if(!rows.length){box.innerHTML='<div style="padding:25px;text-align:center;color:var(--mut)">'+(mode==='unauth'?'Nenhum cartão cadastrado fora do grupo do veículo.':'Nenhuma leitura autorizada.')+'</div>';return;}
   var map={};
   rows.forEach(function(r){var k=r.plate||'—';if(!map[k])map[k]={plate:k,rows:[],drivers:{}};map[k].rows.push(r);map[k].drivers[r.driverId]=1;});
   var arr=Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){return b.rows.length-a.rows.length;});
   var top=arr.slice(0,10);
   var html='<div style="display:grid;gap:8px">'+top.map(function(grp){
     var detail=grp.rows.slice(0,300).map(function(r){
-      var badge=(mode==='unauth')?'<span class="badge warnb">Não autorizado</span>':(r.authorized?'<span class="badge okb">Válido</span>':'<span class="badge warnb">Fora do grupo</span>');
+      var grpTitle=!r.authorized?(' title="Grupos motorista: '+esc(r.driverGroupNames||'—')+' | Grupos veículo: '+esc(r.deviceGroupNames||'—')+'"'):'';
+      var badge=(mode==='unauth')?('<span class="badge warnb"'+grpTitle+'>Não autorizado</span>'):(r.authorized?'<span class="badge okb">Válido</span>':('<span class="badge warnb"'+grpTitle+'>Fora do grupo</span>'));
       return '<tr><td>'+fmtDate(r.dateTime)+'</td><td><span class="mono" title="'+esc(r.serialAll||'')+'">'+esc(r.serial||'—')+'</span></td><td>'+esc(r.driverName)+'</td><td class="mono">'+esc(r.driverEmail||'—')+'</td><td>'+badge+'</td></tr>';
     }).join('');
     return '<details style="border:1px solid var(--bd);border-radius:12px;background:var(--card2);overflow:hidden">'+
@@ -258,7 +263,7 @@ function renderAgg(boxId,rows,mode){
   if(arr.length>10)html+='<div style="margin-top:8px;color:var(--mut);font-size:11px">Mostrando os 10 veículos com mais leituras de '+arr.length+' no total.</div>';
   box.innerHTML=html;
 }
-function renderValidTable(){renderAgg('validTableBox',filteredValid,'valid');}
+function renderValidTable(){renderAgg('validTableBox',filteredValid.filter(function(r){return r.authorized;}),'valid');}
 function renderUnauthTable(){renderAgg('unauthTableBox',filteredValid.filter(function(r){return !r.authorized;}),'unauth');}
 function renderSummary(uniqCards,uniqDev){
   var byCard={};filtered.forEach(function(r){byCard[r.serial]=(byCard[r.serial]||0)+1;});
