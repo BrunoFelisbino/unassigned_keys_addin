@@ -46,7 +46,7 @@ async function saveAddinData(){
     var details=JSON.stringify(addinState),groups=[{id:'GroupCompanyId'}];
     if(addinDataId){await invoke('Set',{typeName:'AddInData',entity:{id:addinDataId,addInId:ADDIN_ID,groups:groups,details:details}});}
     else{addinDataId=await invoke('Add',{typeName:'AddInData',entity:{addInId:ADDIN_ID,groups:groups,details:details}});}
-  }catch(e){console.warn('[UK] falha ao salvar AddInData',e);}
+  }catch(e){console.warn('[UK] falha ao salvar AddInData',e);alertMsg('Falha ao salvar AddInData: '+(e&&(e.message||e.name||JSON.stringify(e)))||'desconhecido',false,true);}
 }
 function linkKey(did,drv){return String(did)+'::'+String(drv);}
 function getLink(did,drv){return addinState&&addinState.links?addinState.links[linkKey(did,drv)]:null;}
@@ -333,7 +333,7 @@ async function ensureAuthListEnabled(deviceId){
     if(!has){dev.customParameters=dev.customParameters||[];dev.customParameters.push({bytes:'CA==',description:'Enable Authorised Driver List',isEnabled:true,offset:164});}
     await invoke('Set',{typeName:'Device',entity:dev});
     return true;
-  }catch(e){console.warn('[UK] falha ao habilitar authlist',e);return false;}
+  }catch(e){console.warn('[UK] falha ao habilitar authlist',e);alertMsg('Falha ao habilitar authlist: '+(e&&(e.message||e.name||JSON.stringify(e)))||'desconhecido',false,true);return false;}
 }
 async function linkDrivers(deviceId,driverIds,btn){
   if(!apiRef){alertMsg('Abra dentro do MyGeotab para vincular.',false,true);return;}
