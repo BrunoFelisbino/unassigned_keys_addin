@@ -7,7 +7,7 @@ Add-in para **MyGeotab** que audita o uso de cartões/chaves de motorista em ve�
 - cartões **cadastrados, mas sem autorização** para o veículo em que foram usados;
 - KPIs, mapa dos veículos e contagem de **validações por dia**.
 
-> Versão atual: **1.0.8** · Licença **MIT** · Autor: Bruno Felisbino
+> Versão atual: **1.0.9** · Licença **MIT** · Autor: Bruno Felisbino
 
 ---
 
@@ -73,6 +73,7 @@ Os filtros valem para todas as seções.
 | `Device` | Placa (`licensePlate` ou prefixo do `name`) e grupos. |
 | `Group` | Nomes e hierarquia de grupos. |
 | `DeviceStatusInfo` | Última posição dos veículos para o mapa. |
+| `AddInData` | Preferências e ledger de vínculos enviados à authlist (leitura na inicialização; escrita só quando há vínculo). |
 
 ### Observações de dados
 
@@ -133,6 +134,36 @@ api.call('Add', {
 - A mensagem fica **na fila** e é aplicada quando o equipamento conectar.
 - O status "sem autorização" continua baseado em **grupos** (não lê a authlist do equipamento,
   que não é exposta pela API); o botão é a ação operacional de correção, não um espelho da authlist.
+
+### Persistência com `AddInData`
+
+O add-in usa a entidade `AddInData` para guardar, **no próprio banco Geotab**, um único
+registro (identificado por `addInId = "unassigned_keys"`) com:
+
+- **Preferências**: o período selecionado (Hoje/7/30/90 dias) é restaurado ao reabrir.
+- **Ledger de vínculos**: cada envio bem-sucedido à authlist é registrado com `deviceId`,
+  `driverId`, `keyIds`, placa, nome, data/hora e usuário que enviou. Como a authlist **não é
+  legível via API**, esse registro funciona como histórico operacional: a tabela mostra
+  "✓ vinculado em dd/mm por usuário" e o botão passa a "Reenviar", evitando envios duplicados.
+
+Boas práticas adotadas:
+
+- Um **único registro** por add-in (menos chamadas e menos chance de conflito).
+- `details` com **JSON versionado** (`schemaVersion`) e parse tolerante (string ou objeto).
+- **Degradação graciosa**: se o usuário não tiver permissão em `AddInData`, o add-in segue
+  funcionando em memória e apenas loga um aviso no console.
+- `groups: [{ id: "GroupCompanyId" }]` para o dado ficar visível a quem tem acesso à empresa.
+
+```js
+// leitura (uma vez na inicialização)
+api.call('Get', { typeName: 'AddInData', search: { addInId: 'unassigned_keys' } }, ...);
+
+// gravação
+api.call('Set', {
+  typeName: 'AddInData',
+  entity: { id, addInId: 'unassigned_keys', groups: [{ id: 'GroupCompanyId' }], details: JSON.stringify(state) }
+}, ...);
+```
 
 ---
 
@@ -202,6 +233,10 @@ exigir perfil/limpeza de segurança específica. Sem `Audit`/`DriverChange`, as 
 
 Para usar o botão **Vincular** (authlist), é necessário permissão de **escrita** para `Add` de
 `TextMessage` e a authlist habilitada no equipamento.
+
+Para a persistência com `AddInData`, o usuário precisa de `Get`/`Add`/`Set` em `AddInData`.
+Sem essa permissão (ou se `AddInData` não estiver disponível no banco), o add-in continua
+funcionando normalmente, porém sem salvar preferências e sem o ledger de vínculos.
 
 ---
 

@@ -19,12 +19,43 @@ button[disabled]{opacity:.78;cursor:wait}.spinner{width:14px;height:14px;display
 (function(){
 'use strict';
 var apiRef=null,map=null,layer=null,allRows=[],filtered=[],validRows=[],filteredValid=[],devices={},groups={},deviceGroupIds={},users={};
+var ADDIN_ID='unassigned_keys',addinDataId=null,addinState=null,sessionUser='';
 var DAY=86400000;
 var $=function(id){return document.getElementById(id);};
 var esc=function(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
 var fmt=v=>v==null||isNaN(Number(v))?'N/I':Number(v).toFixed(2);
 var fmtDate=function(d){var t=new Date(d);return isNaN(t)?'-':t.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});};
 var call=function(t,s){return new Promise(function(ok,err){apiRef.call('Get',{typeName:t,search:s||{}},ok,err);});};
+var invoke=function(m,p){return new Promise(function(ok,err){apiRef.call(m,p,ok,err);});};
+function parseDetails(x){if(!x)return{};if(typeof x==='string'){try{return JSON.parse(x);}catch(e){return{};}}return x;}
+function defaultState(){return{schemaVersion:1,settings:{period:'today'},links:{}};}
+async function loadAddinData(){
+  try{
+    var r=await call('AddInData',{addInId:ADDIN_ID});
+    var d=(r&&(Array.isArray(r)?r[0]:r))||null;
+    if(d&&d.id){addinDataId=d.id;addinState=parseDetails(d.details);}
+    else{addinState=defaultState();await saveAddinData();}
+    addinState.schemaVersion=addinState.schemaVersion||1;
+    addinState.settings=addinState.settings||{period:'today'};
+    addinState.links=addinState.links||{};
+  }catch(e){console.warn('[UK] AddInData indisponível; seguindo em memória',e);addinState=defaultState();}
+}
+async function saveAddinData(){
+  if(!apiRef||!addinState)return;
+  try{
+    var details=JSON.stringify(addinState),groups=[{id:'GroupCompanyId'}];
+    if(addinDataId){await invoke('Set',{typeName:'AddInData',entity:{id:addinDataId,addInId:ADDIN_ID,groups:groups,details:details}});}
+    else{addinDataId=await invoke('Add',{typeName:'AddInData',entity:{addInId:ADDIN_ID,groups:groups,details:details}});}
+  }catch(e){console.warn('[UK] falha ao salvar AddInData',e);}
+}
+function linkKey(did,drv){return String(did)+'::'+String(drv);}
+function getLink(did,drv){return addinState&&addinState.links?addinState.links[linkKey(did,drv)]:null;}
+function recordLinkLocal(deviceId,driverId,keyIds,plate,driverName){
+  if(!addinState)return;
+  addinState.links=addinState.links||{};
+  addinState.links[linkKey(deviceId,driverId)]={deviceId:deviceId,driverId:driverId,keyIds:keyIds,plate:plate||'',driverName:driverName||'',linkedAt:new Date().toISOString(),linkedBy:sessionUser||''};
+}
+function fmtShort(iso){var t=new Date(iso);return isNaN(t)?'—':t.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
 
 function shell(){
   $('app').innerHTML=
@@ -52,10 +83,15 @@ function shell(){
     '<div class="panel"><div class="pt">Cartões cadastrados, mas sem autorização no veículo</div><div style="font-size:11px;color:var(--mut);margin:-6px 0 10px">Regra: grupos do motorista × grupos do veículo (passe o mouse no status para ver os grupos). Use <b>Vincular</b> para enviar o cartão à <i>driver list</i> (authlist) do equipamento — a authlist precisa estar habilitada no GO.</div><div id="unauthTableBox"></div></div>'+
     '<footer style="text-align:center;font-size:11px;color:var(--mut);padding:8px 0">Projeto independente • Licença MIT</footer>';
   $('refreshBtn').onclick=function(){load(apiRef);};
-  $('periodFilter').onchange=apply;
+  $('periodFilter').onchange=function(){if(addinState){addinState.settings=addinState.settings||{};addinState.settings.period=this.value;saveAddinData();}apply();};
   $('groupFilter').onchange=apply;
   $('deviceFilter').onchange=apply;
   $('queryFilter').oninput=apply;
+}
+function applySettings(){
+  if(!addinState)return;
+  var p=addinState.settings&&addinState.settings.period,el=$('periodFilter');
+  if(p&&el)el.value=p;
 }
 function setStatus(t){var e=$('statusBox');if(e)e.textContent=t;}
 function alertMsg(t,ok,err){var e=$('alertBox');if(!e)return;e.style.display=t?'block':'none';e.className='alert '+(ok?'ok':err?'err':'');e.textContent=t||'';}
@@ -251,8 +287,10 @@ function renderAgg(boxId,rows,mode){
     var detail=grp.rows.slice(0,300).map(function(r){
       var grpTitle=!r.authorized?(' title="Grupos motorista: '+esc(r.driverGroupNames||'—')+' | Grupos veículo: '+esc(r.deviceGroupNames||'—')+'"'):'';
       var badge=(isU)?('<span class="badge warnb"'+grpTitle+'>Não autorizado</span>'):(r.authorized?'<span class="badge okb">Válido</span>':('<span class="badge warnb"'+grpTitle+'>Fora do grupo</span>'));
-      var action=isU&&r.deviceId?('<td><button class="uk-link" data-dev="'+esc(r.deviceId)+'" data-driver="'+esc(r.driverId)+'" style="height:24px;padding:0 8px;font-size:10px">Vincular</button></td>'):(isU?'<td>—</td>':'');
-      return '<tr><td>'+fmtDate(r.dateTime)+'</td><td><span class="mono" title="'+esc(r.serialAll||'')+'">'+esc(r.serial||'—')+'</span></td><td>'+esc(r.driverName)+'</td><td class="mono">'+esc(r.driverEmail||'—')+'</td><td>'+badge+'</td>'+action+'</tr>';
+      var lnk=isU?getLink(r.deviceId,r.driverId):null;
+      var linkInfo=lnk?('<div style="font-size:10px;color:#047857;margin-top:3px">✓ vinculado '+fmtShort(lnk.linkedAt)+(lnk.linkedBy?(' por '+esc(lnk.linkedBy)):'')+'</div>'):'';
+      var action=isU&&r.deviceId?('<td><button class="uk-link" data-dev="'+esc(r.deviceId)+'" data-driver="'+esc(r.driverId)+'" style="height:24px;padding:0 8px;font-size:10px">'+(lnk?'Reenviar':'Vincular')+'</button></td>'):(isU?'<td>—</td>':'');
+      return '<tr><td>'+fmtDate(r.dateTime)+'</td><td><span class="mono" title="'+esc(r.serialAll||'')+'">'+esc(r.serial||'—')+'</span></td><td>'+esc(r.driverName)+'</td><td class="mono">'+esc(r.driverEmail||'—')+'</td><td>'+badge+linkInfo+'</td>'+action+'</tr>';
     }).join('');
     var bulk=isU&&grp.deviceId?('<button class="uk-link-all" data-dev="'+esc(grp.deviceId)+'" data-drivers="'+Object.keys(grp.drivers).join(',')+'" style="height:26px;padding:0 10px;font-size:10px">Vincular cartões</button>'):'';
     return '<details style="border:1px solid var(--bd);border-radius:12px;background:var(--card2);overflow:hidden">'+
@@ -285,18 +323,27 @@ function sendAuthKey(deviceId,key){
 async function linkDrivers(deviceId,driverIds,btn){
   if(!apiRef){alertMsg('Abra dentro do MyGeotab para vincular.',false,true);return;}
   var keys=[],names=[],missing=[];
-  (driverIds||[]).forEach(function(id){var u=users[id];if(u&&u.rawKeys&&u.rawKeys.length){u.rawKeys.forEach(function(k){keys.push({key:k,driver:u.name});});names.push(u.name);}else{missing.push((u&&u.name)||id);}});
+  (driverIds||[]).forEach(function(id){
+    var u=users[id];
+    if(u&&u.rawKeys&&u.rawKeys.length){u.rawKeys.forEach(function(k){var dk=toDriverKey(k);keys.push({key:k,driver:u.name,driverId:id,keyId:dk?dk.keyId:''});});names.push(u.name);}
+    else{missing.push((u&&u.name)||id);}
+  });
   if(!keys.length){alertMsg('Nenhum cartão cadastrado (User.keys) para vincular'+(missing.length?': '+missing.join(', '):'.'),false,true);return;}
   var msg='Enviar '+keys.length+' cartão(ões)'+(driverIds.length>1?(' de '+names.length+' motorista(s)'):'')+' para a driver list do veículo?\n\nA authlist precisa estar habilitada no GO e existe limite de cartões por equipamento.';
   if(!window.confirm(msg))return;
   var old=btn.textContent;btn.disabled=true;btn.textContent='Enviando...';
-  var okCount=0,fail=[];
+  var okCount=0,fail=[],successByDriver={};
   for(var i=0;i<keys.length;i++){
-    try{await sendAuthKey(deviceId,keys[i].key);okCount++;}catch(e){fail.push(keys[i].driver+': '+(e&&(e.message||e.name)||e));}
+    try{await sendAuthKey(deviceId,keys[i].key);okCount++;var did=keys[i].driverId;(successByDriver[did]=successByDriver[did]||[]).push(keys[i].keyId);}
+    catch(e){fail.push(keys[i].driver+': '+(e&&(e.message||e.name)||e));}
   }
+  var dev=devices[deviceId]||{};
+  Object.keys(successByDriver).forEach(function(did){recordLinkLocal(deviceId,did,successByDriver[did],dev.plate||'',(users[did]&&users[did].name)||'');});
+  if(okCount>0)await saveAddinData();
   btn.disabled=false;
   if(fail.length){btn.textContent=old;alertMsg('Enviados '+okCount+' de '+keys.length+'. Falhas: '+fail.slice(0,3).join(' | '),false,true);}
   else{btn.textContent='Vinculado ✓';btn.style.color='#047857';btn.style.borderColor='#10b981';alertMsg(okCount+' cartão(ões) enviados para a driver list. O GO aplica quando conectar.',true,false);}
+  renderAgg('unauthTableBox',filteredValid.filter(function(r){return !r.authorized;}),'unauth');
 }
 function renderValidTable(){renderAgg('validTableBox',filteredValid.filter(function(r){return r.authorized;}),'valid');}
 function renderUnauthTable(){renderAgg('unauthTableBox',filteredValid.filter(function(r){return !r.authorized;}),'unauth');}
@@ -345,9 +392,14 @@ function renderMap(){
   }).catch(function(){});
 }
 
-function init(api){
+async function init(api){
   try{
-    apiRef=api;shell();setStatus('Pronto');
+    apiRef=api;
+    try{if(apiRef.getSession)apiRef.getSession(function(s){sessionUser=(s&&(s.userName||(s.user&&s.user.name)))||'';});}catch(e){}
+    shell();setStatus('Carregando...');
+    await loadAddinData();
+    applySettings();
+    setStatus('Pronto');
     load(api);
   }catch(e){
     console.error(e);var r=$('app');if(r)r.innerHTML='<div style="padding:20px;color:#991b1b">Erro ao iniciar: '+esc(e.message||e)+'</div>';

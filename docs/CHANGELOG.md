@@ -4,6 +4,17 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.0.9] — 2026-11-09
+
+### Adicionado
+- Persistência com `AddInData`: o período selecionado é restaurado ao reabrir o add-in.
+- **Ledger de vínculos**: cada envio bem-sucedido à authlist é registrado (veículo, motorista,
+  cartões, placa, data/hora e usuário). A tabela mostra "✓ vinculado em dd/mm por usuário" e o
+  botão passa a "Reenviar", evitando duplicidade — já que a authlist não é legível pela API.
+
+### Observações
+- Requer `Get`/`Add`/`Set` em `AddInData`; sem permissão, o add-in segue funcionando em memória.
+
 ## [1.0.8] — 2026-11-09
 
 ### Adicionado

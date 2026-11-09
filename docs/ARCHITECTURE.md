@@ -142,7 +142,35 @@ api.call('Add', {
 - Requer authlist habilitada no GO, permissão de `Add` em `TextMessage` e respeita o limite de
   cartões por equipamento.
 
-### 6. Mapa — `DeviceStatusInfo`
+### 6. Persistência — `AddInData`
+
+Um único registro por banco, com `addInId = "unassigned_keys"`, guarda um JSON versionado:
+
+```json
+{
+  "schemaVersion": 1,
+  "settings": { "period": "today" },
+  "links": {
+    "<deviceId>::<driverId>": {
+      "deviceId": "...", "driverId": "...", "keyIds": ["..."],
+      "plate": "ABC1D23", "driverName": "...",
+      "linkedAt": "2026-11-09T12:00:00.000Z", "linkedBy": "usuario"
+    }
+  }
+}
+```
+
+- Lido uma vez em `loadAddinData()` na inicialização; `details` é parseado de forma tolerante
+  (string ou objeto) e `schemaVersion` permite migração futura.
+- Gravado (`Add` na primeira vez, depois `Set`) somente ao trocar o período ou ao concluir um
+  vínculo com sucesso.
+- `groups: [{ id: "GroupCompanyId" }]` deixa o dado visível a quem tem acesso à empresa.
+- **Degradação graciosa**: qualquer falha em `AddInData` é capturada e logada; o add-in opera em
+  memória sem quebrar.
+- Como a authlist não é legível, esse ledger é a memória operacional dos vínculos (quem/quando),
+  usado para exibir "✓ vinculado" e trocar o botão para "Reenviar".
+
+### 7. Mapa — `DeviceStatusInfo`
 
 Para os veículos com tentativas não cadastradas, busca a última posição conhecida e plota
 `circleMarker` no Leaflet, ajustando o zoom ao conjunto de pontos.
