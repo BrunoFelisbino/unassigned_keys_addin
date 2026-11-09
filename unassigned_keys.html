@@ -21,6 +21,7 @@ button[disabled]{opacity:.78;cursor:wait}.spinner{width:14px;height:14px;display
 var apiRef=null,map=null,layer=null,allRows=[],filtered=[],validRows=[],filteredValid=[],devices={},groups={},deviceGroupIds={},users={};
 var ADDIN_ID='unassigned_keys',addinDataId=null,addinState=null,sessionUser='';
 var DAY=86400000;
+var expandedSections={};
 var $=function(id){return document.getElementById(id);};
 var esc=function(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
 var fmt=v=>v==null||isNaN(Number(v))?'N/I':Number(v).toFixed(2);
@@ -245,7 +246,7 @@ function render(){
   var authN=filteredValid.length-unauth;
 
   var cards=[
-    ['Tentativas',filtered.length,'registros no período','var(--red)'],
+    ['Tentativas',filtered.length,'registros no período (clique)','var(--red)'],
     ['Cartões não cadastrados',uniqCards,'seriais distintos','var(--orange)'],
     ['Veículos afetados',uniqDev,'veículos distintos','var(--blue)'],
     ['Última tentativa',last?fmtDate(last.dateTime):'—','','var(--gray)'],
@@ -255,7 +256,7 @@ function render(){
     ['Média validações/dia',avg?avg.toFixed(1):'0','por dia no período','var(--green)'],
     ['Última leitura válida',vLast?fmtDate(vLast.dateTime):'—','','var(--gray)']
   ];
-  $('kpisBox').innerHTML=cards.map(function(r){return '<div class="kpi"><span>'+r[0]+'</span><b style="color:'+r[3]+';font-size:'+(r[0].indexOf('Última')===0?'14px':'30px')+'">'+esc(r[1])+'</b><small>'+esc(r[2])+'</small></div>';}).join('');
+  $('kpisBox').innerHTML=cards.map(function(r,i){var click=(i===0)?' style="cursor:pointer" onclick="document.getElementById(\'tableBox\').scrollIntoView({behavior:\'smooth\',block:\'start\'});"':'';return '<div class="kpi"'+click+'><span>'+r[0]+'</span><b style="color:'+r[3]+';font-size:'+(r[0].indexOf('Última')===0?'14px':'30px')+'">'+esc(r[1])+'</b><small>'+esc(r[2])+'</small></div>';}).join('');
 
   renderTable();
   renderSummary(uniqCards,uniqDev);
@@ -282,9 +283,9 @@ function renderAgg(boxId,rows,mode){
   var map={};
   rows.forEach(function(r){var k=r.plate||'—';if(!map[k])map[k]={plate:k,rows:[],drivers:{},deviceId:''};map[k].rows.push(r);map[k].drivers[r.driverId]=1;if(!map[k].deviceId&&r.deviceId)map[k].deviceId=r.deviceId;});
   var arr=Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){return b.rows.length-a.rows.length;});
-  var top=arr.slice(0,10);
+  var aLimit=20;var aShowAll=!!expandedSections[boxId];var top=arr.slice(0,aShowAll?arr.length:Math.min(aLimit,arr.length));
   var html='<div style="display:grid;gap:8px">'+top.map(function(grp){
-    var detail=grp.rows.slice(0,300).map(function(r){
+    var dLimit=aShowAll?grp.rows.length:Math.min(20,grp.rows.length);var detail=grp.rows.slice(0,dLimit).map(function(r){
       var grpTitle=!r.authorized?(' title="Grupos motorista: '+esc(r.driverGroupNames||'—')+' | Grupos veículo: '+esc(r.deviceGroupNames||'—')+'"'):'';
       var badge=(isU)?('<span class="badge warnb"'+grpTitle+'>Não autorizado</span>'):(r.authorized?'<span class="badge okb">Válido</span>':('<span class="badge warnb"'+grpTitle+'>Fora do grupo</span>'));
       var lnk=isU?getLink(r.deviceId,r.driverId):null;
@@ -301,8 +302,10 @@ function renderAgg(boxId,rows,mode){
       '<div style="padding:0 10px 10px"><table><thead><tr><th>Data/Hora</th><th>Cartão (Serial)</th><th>Motorista</th><th>E-mail</th><th>Status</th>'+(isU?'<th>Ação</th>':'')+'</tr></thead><tbody>'+detail+'</tbody></table></div>'+
     '</details>';
   }).join('')+'</div>';
-  if(arr.length>10)html+='<div style="margin-top:8px;color:var(--mut);font-size:11px">Mostrando os 10 veículos com mais leituras de '+arr.length+' no total.</div>';
+  if((arr.length>aLimit)||(top.some(function(g){return g.rows.length>20;}))){html+='<div style="margin-top:8px;text-align:center"><button class="uk-expand" data-sec="'+boxId+'" style="height:26px;padding:0 12px;font-size:11px">'+(aShowAll?'Mostrar menos':'Mostrar todos')+'</button></div>';}
+  if(arr.length>10&&!aShowAll)html+='<div style="margin-top:8px;color:var(--mut);font-size:11px">Mostrando os '+Math.min(aLimit,arr.length)+' veículos com mais leituras de '+arr.length+' no total.</div>';
   box.innerHTML=html;
+  var ab=box.querySelector('.uk-expand');if(ab)ab.onclick=function(){expandedSections[boxId]=!expandedSections[boxId];render();};
   if(isU){
     box.querySelectorAll('.uk-link').forEach(function(b){b.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();linkDrivers(this.getAttribute('data-dev'),[this.getAttribute('data-driver')],this);});});
     box.querySelectorAll('.uk-link-all').forEach(function(b){b.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();linkDrivers(this.getAttribute('data-dev'),(this.getAttribute('data-drivers')||'').split(',').filter(Boolean),this);});});
@@ -366,19 +369,26 @@ function renderValidTable(){renderAgg('validTableBox',filteredValid.filter(funct
 function renderUnauthTable(){renderAgg('unauthTableBox',filteredValid.filter(function(r){return !r.authorized;}),'unauth');}
 function renderSummary(uniqCards,uniqDev){
   var byCard={};filtered.forEach(function(r){byCard[r.serial]=(byCard[r.serial]||0)+1;});
-  var rows=Object.entries(byCard).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  var sLimit=20;var sShowAll=!!expandedSections.summary;var rows=Object.entries(byCard).sort(function(a,b){return b[1]-a[1];}).slice(0,sShowAll?Object.entries(byCard).length:sLimit);
   var max=rows.length?rows[0][1]:1;
-  $('summaryBox').innerHTML=rows.length?('<div style="display:grid;gap:8px">'+rows.map(function(r){
+  var sumHtml=rows.length?('<div style="display:grid;gap:8px">'+rows.map(function(r){
     var w=Math.max(6,Math.round(r[1]/max*100));
     return '<div><div style="display:flex;justify-content:space-between"><span class="mono">'+esc(r[0])+'</span><b>'+r[1]+'</b></div><div style="height:10px;background:#eaf4fb;border-radius:20px;overflow:hidden;margin-top:3px"><div style="height:10px;width:'+w+'%;background:var(--orange);border-radius:20px"></div></div></div>';
   }).join('')+'</div>'):'<div>Sem dados no período.</div>';
+  if(Object.keys(byCard).length>sLimit){sumHtml+='<div style="margin-top:8px;text-align:center"><button class="uk-expand" data-sec="summary" style="height:26px;padding:0 12px;font-size:11px">'+(sShowAll?'Mostrar menos':'Mostrar todos ('+Object.keys(byCard).length+')')+'</button></div>';}
+  $('summaryBox').innerHTML=sumHtml;
+  var sb=$('summaryBox').querySelector('.uk-expand');if(sb)sb.onclick=function(){expandedSections.summary=!expandedSections.summary;render();};
 }
 function renderTable(){
   if(!filtered.length){$('tableBox').innerHTML='<div style="padding:25px;text-align:center;color:var(--mut)">Nenhum registro.</div>';return;}
-  $('tableBox').innerHTML='<table><thead><tr><th>Data/Hora</th><th>Veículo (Placa)</th><th>Cartão (Serial)</th><th>Status</th><th>Ação</th></tr></thead><tbody>'+
-    filtered.map(function(r){
+  var tLimit=20;var tShowAll=!!expandedSections.table;var tRows=tShowAll?filtered:filtered.slice(0,tLimit);
+  var tHtml='<table><thead><tr><th>Data/Hora</th><th>Veículo (Placa)</th><th>Cartão (Serial)</th><th>Status</th><th>Ação</th></tr></thead><tbody>'+
+    tRows.map(function(r){
       return '<tr><td>'+fmtDate(r.dateTime)+'</td><td><b style="color:var(--txt)">'+esc(r.plate)+'</b></td><td><span class="mono">'+esc(r.serial)+'</span></td><td><span class="badge riskb">Não cadastrado</span></td><td><span class="badge warnb">Cadastrar no Geotab</span></td></tr>';
     }).join('')+'</tbody></table>';
+  if(filtered.length>tLimit){tHtml+='<div style="padding:8px;text-align:center"><button class="uk-expand" data-sec="table" style="height:26px;padding:0 12px;font-size:11px">'+(tShowAll?'Mostrar menos':'Mostrar todos ('+filtered.length+')')+'</button></div>';}
+  $('tableBox').innerHTML=tHtml;
+  var tb=$('tableBox').querySelector('.uk-expand');if(tb)tb.onclick=function(){expandedSections.table=!expandedSections.table;render();};
 }
 function initMap(){
   if(!window.L||!$('mapBox'))return;
@@ -414,6 +424,7 @@ async function init(api){
     apiRef=api;
     try{if(apiRef.getSession)apiRef.getSession(function(s){sessionUser=(s&&(s.userName||(s.user&&s.user.name)))||'';});}catch(e){}
     shell();setStatus('Carregando...');
+    document.addEventListener('click',function(e){var b=e.target&&e.target.closest&&e.target.closest('.uk-expand');if(!b)return;var sec=b.getAttribute('data-sec');if(sec){expandedSections[sec]=!expandedSections[sec];render();}});
     await loadAddinData();
     applySettings();
     setStatus('Pronto');
