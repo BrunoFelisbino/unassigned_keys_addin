@@ -1160,6 +1160,8 @@ document.getElementById('modal-save').addEventListener('click', function(){
     var exists = keys.some(function(k){ return k && k.serialNumber === serial; });
     if (!exists) keys.push({ serialNumber: serial, driverKeyType: 'Nfc' });
     user.keys = keys;
+    if (!user.id) user.id = uid;
+    user.userModifiedInfo = { modifiedUserName: (_state && _state.userName) ? _state.userName : (user.name || 'addin') };
     _api.call('Set', { typeName: 'User', entity: user }, function(){ alert('Cartão vinculado!'); closeModal(); }, function(e){ alert('Erro: ' + JSON.stringify(e)); });
   }, function(e){ alert('Erro ao buscar usuário: ' + JSON.stringify(e)); });
 });
