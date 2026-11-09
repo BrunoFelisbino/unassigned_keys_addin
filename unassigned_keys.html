@@ -49,16 +49,18 @@
   </div>
 </div>
 <script>
-var _api,_state; var allData=[]; var deviceMap={}; var groupMap={}; var userMap={}; var map=null; var layer=null;
+var _api,_state; var allData=[]; var deviceMap={}; var groupMap={}; var userMap={}; var map=null; var layer=null; var lookupsReady=0;
 var isMockMode=typeof window.geotab==='undefined';
 if(isMockMode){window.geotab={addin:{}};}else{window.geotab=window.geotab||{};window.geotab.addin=window.geotab.addin||{};}
 window.geotab.addin.unassigned_keys=function(api,state){_api=api;_state=state;loadLookups();setStatus('Pronto');};
 
 function loadLookups(){
-  _api.call('Get',{typeName:'Group'},function(g){groupMap={};(g||[]).forEach(function(x){groupMap[x.id]=x;});populateGroup();},function(){});
-  _api.call('Get',{typeName:'Device'},function(d){deviceMap={};(d||[]).forEach(function(x){deviceMap[x.id]=x;});populateDevice();initMap();},function(){});
-  _api.call('Get',{typeName:'User'},function(u){userMap={};(u||[]).forEach(function(x){if(x.isDriver) userMap[x.id]=x;});populateUsers();},function(){});
+  lookupsReady=0;
+  _api.call('Get',{typeName:'Group'},function(g){groupMap={};(g||[]).forEach(function(x){groupMap[x.id]=x;});populateGroup();lookupDone();},function(){lookupDone();});
+  _api.call('Get',{typeName:'Device'},function(d){deviceMap={};(d||[]).forEach(function(x){deviceMap[x.id]=x;});populateDevice();initMap();lookupDone();},function(){lookupDone();});
+  _api.call('Get',{typeName:'User'},function(u){userMap={};(u||[]).forEach(function(x){if(x.isDriver) userMap[x.id]=x;});populateUsers();lookupDone();},function(){lookupDone();});
 }
+function lookupDone(){lookupsReady++;if(lookupsReady>=3) fetchAudit();}
 function populateGroup(){var s=document.getElementById('sel-group');s.innerHTML='<option value="">Todos os grupos</option>'+Object.values(groupMap).sort(function(a,b){return a.name.localeCompare(b.name);}).map(function(g){return '<option value="'+esc(g.id)+'">'+esc(g.name)+'</option>';}).join('');}
 function populateDevice(){var s=document.getElementById('sel-device');var g=document.getElementById('sel-group').value;s.innerHTML='<option value="">Todos os veículos</option>'+Object.values(deviceMap).filter(function(d){return !g|| (d.groups||[]).some(function(x){return x.id===g;})||d.groupId===g;}).sort(function(a,b){return (a.name||'').localeCompare(b.name||'');}).map(function(d){return '<option value="'+esc(d.id)+'">'+esc(inferPlate(d))+'</option>';}).join('');}
 function populateUsers(){var s=document.getElementById('modal-user');s.innerHTML=Object.values(userMap).sort(function(a,b){return (a.firstName||a.name||'').localeCompare(b.firstName||b.name||'');}).map(function(u){return '<option value="'+esc(u.id)+'">'+esc((u.firstName||'')+' '+(u.lastName||'')+' ('+(u.name||'')+')')+'</option>';}).join('');}
