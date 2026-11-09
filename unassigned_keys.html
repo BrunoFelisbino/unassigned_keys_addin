@@ -109,9 +109,14 @@ document.getElementById('modal-save').addEventListener('click',function(){
   var uid=document.getElementById('modal-user').value;
   var u=userMap[uid];
   if(!u){alert('Selecione um usuário');return;}
-  var keys=Array.isArray(u.keys)?u.keys.slice():[];
-  if(keys.indexOf(serial)===-1) keys.push(serial);
-  _api.call('Set',{typeName:'User',entity:{id:uid,keys:keys}},function(){alert('Cartão vinculado!');closeModal();},function(e){alert('Erro: '+JSON.stringify(e));});
+  _api.call('Get',{typeName:'User',search:{id:uid}},function(res){
+    var user=(res&&res[0])?res[0]:u;
+    var keys=Array.isArray(user.keys)?user.keys.slice():[];
+    var exists=keys.some(function(k){return k && k.serialNumber===serial;});
+    if(!exists) keys.push({serialNumber:serial,driverKeyType:'Nfc'});
+    user.keys=keys;
+    _api.call('Set',{typeName:'User',entity:user},function(){alert('Cartão vinculado!');closeModal();},function(e){alert('Erro: '+JSON.stringify(e));});
+  },function(e){alert('Erro ao buscar usuário: '+JSON.stringify(e));});
 });
 
 document.getElementById('btn-fetch').addEventListener('click',fetchAudit);
