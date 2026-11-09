@@ -1,0 +1,14 @@
+# Sistema / editores
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.swp
+*~
+
+# Logs e temporários
+*.log
+tmp/
+temp/
+
+# Nada de dependências (projeto é estático, sem build)
+node_modules/
