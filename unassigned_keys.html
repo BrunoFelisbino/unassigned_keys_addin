@@ -49,6 +49,7 @@ function shell(){
     '<div class="panel"><div class="pt">Tentativas de cartões não cadastrados</div><div id="tableBox"></div></div>'+
     '<div class="panel"><div class="pt">Viagens validadas por dia (cartões cadastrados)</div><div id="dailyBox" style="color:var(--mut);font-size:12px">—</div></div>'+
     '<div class="panel"><div class="pt">Leituras válidas (cartões cadastrados)</div><div id="validTableBox"></div></div>'+
+    '<div class="panel"><div class="pt">Cartões cadastrados, mas sem autorização no veículo</div><div id="unauthTableBox"></div></div>'+
     '<footer style="text-align:center;font-size:11px;color:var(--mut);padding:8px 0">Projeto independente • Licença MIT</footer>';
   $('refreshBtn').onclick=function(){load(apiRef);};
   $('periodFilter').onchange=apply;
@@ -83,7 +84,14 @@ async function load(api){
     dv.forEach(function(d){if(!d||!d.name)return;var plate=inferPlate(d);devices[d.id]={id:d.id,name:d.name,plate:plate};deviceGroupIds[d.id]=(d.groups||[]).map(function(x){return x.id;});});
     $('deviceFilter').innerHTML='<option value="">Todos os veículos</option>'+Object.values(devices).sort(function(a,b){return a.plate.localeCompare(b.plate);}).map(function(d){return '<option value="'+esc(d.id)+'">'+esc(d.plate)+'</option>';}).join('');
     var us=await call('User',{}).catch(function(){return[];});
-    users={};(us||[]).forEach(function(u){if(u&&u.id)users[u.id]=u;});
+    users={};(us||[]).forEach(function(u){
+      if(!u||!u.id)return;
+      var grpIds=((u.companyGroups||u.groups||[])).map(function(g){return g&&g.id?g.id:g;}).filter(Boolean);
+      var email=u.email||(u.contactDetails&&u.contactDetails.email)||'';
+      var nm=u.name||((u.firstName||'')+' '+(u.lastName||'')).trim()||u.id;
+      if(!email && /@/.test(nm))email=nm;
+      users[u.id]={id:u.id,name:nm,email:email,groupIds:grpIds};
+    });
 
     setStatus('Buscando Audit...');
     var aud=await call('Audit',{fromDate:rng.from.toISOString(),toDate:rng.to.toISOString()});
@@ -130,7 +138,9 @@ async function load(api){
         deviceId:did,
         deviceName:dev.name||dev.plate||'—',
         driverId:drv,
-        driverName:(u.name||((u.firstName||'')+' '+(u.lastName||'')).trim()||drv),
+        driverName:u.name||drv,
+        driverEmail:u.email||'',
+        authorized:isAuthorized(drv,did),
         type:d.type||''
       });
     });
@@ -152,6 +162,14 @@ function inferPlate(d){var p=(d.licensePlate||'').trim();if(p)return p;var n=(d.
 function extractSerial(txt){var m=txt.match(/\b\d{6,20}\b/);if(m)return m[0];var h=txt.match(/\b(?=[0-9A-Fa-f]*\d)[0-9A-Fa-f]{8,20}\b/);return h?h[0]:'';}
 function extractPlate(txt){var m=txt.match(/\b[A-Z]{3}\d[A-Z0-9]\d{2}\b/);return m?m[0]:'';}
 function findDeviceByPlate(plate){if(!plate)return null;var k=Object.keys(devices);for(var i=0;i<k.length;i++){var d=devices[k[i]];if(d.plate===plate||(d.name||'').indexOf(plate)!==-1)return d;}return null;}
+function authGroups(ids){return (ids||[]).filter(function(id){var g=groups[id];if(!g)return true;return g.name!=='GroupCompanyId'&&g.id!=='GroupCompanyId';});}
+function isAuthorized(driverId,deviceId){
+  var u=users[driverId];if(!u)return true;
+  var ug=authGroups(u.groupIds),dg=authGroups(deviceGroupIds[deviceId]||[]);
+  if(!ug.length||!dg.length)return true; // sem grupos suficientes: não penaliza
+  for(var i=0;i<ug.length;i++){if(dg.indexOf(ug[i])!==-1)return true;}
+  return false;
+}
 
 function apply(){
   var g=$('groupFilter')?$('groupFilter').value:'';
@@ -176,8 +194,8 @@ function render(){
   var uniqCards=Object.keys(serials).length, uniqDev=Object.keys(plates).length;
   var last=filtered[0];
 
-  var vDrivers={},vPlates={},days={};
-  filteredValid.forEach(function(r){if(r.driverId)vDrivers[r.driverId]=1;if(r.plate&&r.plate!=='—')vPlates[r.plate]=1;var k=dayKey(r.dateTime);if(k)days[k]=(days[k]||0)+1;});
+  var vDrivers={},vPlates={},days={},unauth=0;
+  filteredValid.forEach(function(r){if(r.driverId)vDrivers[r.driverId]=1;if(r.plate&&r.plate!=='—')vPlates[r.plate]=1;var k=dayKey(r.dateTime);if(k)days[k]=(days[k]||0)+1;if(!r.authorized)unauth++;});
   var vDriversN=Object.keys(vDrivers).length, dayCount=Object.keys(days).length;
   var vLast=filteredValid[0];
   var avg=dayCount?(filteredValid.length/dayCount):0;
@@ -188,6 +206,7 @@ function render(){
     ['Veículos afetados',uniqDev,'veículos distintos','var(--blue)'],
     ['Última tentativa',last?fmtDate(last.dateTime):'—','','var(--gray)'],
     ['Leituras válidas',filteredValid.length,'cartões cadastrados','var(--green)'],
+    ['Sem autorização',unauth,'cadastrados fora do grupo','var(--yellow)'],
     ['Motoristas distintos',vDriversN,'motoristas','var(--blue)'],
     ['Média validações/dia',avg?avg.toFixed(1):'0','por dia no período','var(--green)'],
     ['Última leitura válida',vLast?fmtDate(vLast.dateTime):'—','','var(--gray)']
@@ -198,6 +217,7 @@ function render(){
   renderSummary(uniqCards,uniqDev);
   renderDaily(days);
   renderValidTable();
+  renderUnauthTable();
   renderMap();
 }
 function renderDaily(days){
@@ -214,9 +234,19 @@ function renderDaily(days){
 function renderValidTable(){
   var box=$('validTableBox');if(!box)return;
   if(!filteredValid.length){box.innerHTML='<div style="padding:25px;text-align:center;color:var(--mut)">Nenhuma leitura válida.</div>';return;}
-  box.innerHTML='<table><thead><tr><th>Data/Hora</th><th>Veículo (Placa)</th><th>Motorista</th><th>Status</th></tr></thead><tbody>'+
+  box.innerHTML='<table><thead><tr><th>Data/Hora</th><th>Veículo (Placa)</th><th>Motorista</th><th>E-mail</th><th>Status</th></tr></thead><tbody>'+
     filteredValid.map(function(r){
-      return '<tr><td>'+fmtDate(r.dateTime)+'</td><td><b style="color:var(--txt)">'+esc(r.plate)+'</b></td><td>'+esc(r.driverName)+'</td><td><span class="badge okb">Válido</span></td></tr>';
+      var badge=r.authorized?'<span class="badge okb">Válido</span>':'<span class="badge warnb">Fora do grupo</span>';
+      return '<tr><td>'+fmtDate(r.dateTime)+'</td><td><b style="color:var(--txt)">'+esc(r.plate)+'</b></td><td>'+esc(r.driverName)+'</td><td class="mono">'+esc(r.driverEmail||'—')+'</td><td>'+badge+'</td></tr>';
+    }).join('')+'</tbody></table>';
+}
+function renderUnauthTable(){
+  var box=$('unauthTableBox');if(!box)return;
+  var rows=filteredValid.filter(function(r){return !r.authorized;});
+  if(!rows.length){box.innerHTML='<div style="padding:25px;text-align:center;color:var(--mut)">Nenhum cartão cadastrado fora do grupo do veículo.</div>';return;}
+  box.innerHTML='<table><thead><tr><th>Data/Hora</th><th>Veículo (Placa)</th><th>Motorista</th><th>E-mail</th><th>Status</th></tr></thead><tbody>'+
+    rows.map(function(r){
+      return '<tr><td>'+fmtDate(r.dateTime)+'</td><td><b style="color:var(--txt)">'+esc(r.plate)+'</b></td><td>'+esc(r.driverName)+'</td><td class="mono">'+esc(r.driverEmail||'—')+'</td><td><span class="badge warnb">Não autorizado</span></td></tr>';
     }).join('')+'</tbody></table>';
 }
 function renderSummary(uniqCards,uniqDev){
