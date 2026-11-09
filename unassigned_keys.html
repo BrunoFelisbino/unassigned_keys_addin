@@ -18,7 +18,7 @@ button[disabled]{opacity:.78;cursor:wait}.spinner{width:14px;height:14px;display
 <script>
 (function(){
 'use strict';
-var apiRef=null,map=null,layer=null,allRows=[],filtered=[],devices={},groups={},deviceGroupIds={};
+var apiRef=null,map=null,layer=null,allRows=[],filtered=[],validRows=[],filteredValid=[],devices={},groups={},deviceGroupIds={},users={};
 var DAY=86400000;
 var $=function(id){return document.getElementById(id);};
 var esc=function(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
@@ -41,12 +41,14 @@ function shell(){
       '<input id="queryFilter" placeholder="Placa ou cartão..."/>'+
       '<button class="primary" id="refreshBtn">Buscar dados</button>'+
     '</div>'+
-    '<div class="info"><span>Registros: <b id="countBox">0</b></span><span>Audit escaneados: <b id="scannedBox">0</b></span><span id="filterInfo"></span></div>'+
+    '<div class="info"><span>Registros: <b id="countBox">0</b></span><span>Audit escaneados: <b id="scannedBox">0</b></span><span>DriverChange escaneados: <b id="dcBox">0</b></span><span id="filterInfo"></span></div>'+
     '<div id="alertBox" class="alert" style="display:none"></div>'+
     '<div id="kpisBox" class="grid"></div>'+
     '<div class="cols"><div class="panel"><div class="pt">Mapa dos veículos com tentativas</div><div id="mapBox" class="map"></div></div>'+
       '<div class="panel"><div class="pt">Resumo</div><div id="summaryBox" style="color:var(--mut);font-size:12px">—</div></div></div>'+
     '<div class="panel"><div class="pt">Tentativas de cartões não cadastrados</div><div id="tableBox"></div></div>'+
+    '<div class="panel"><div class="pt">Viagens validadas por dia (cartões cadastrados)</div><div id="dailyBox" style="color:var(--mut);font-size:12px">—</div></div>'+
+    '<div class="panel"><div class="pt">Leituras válidas (cartões cadastrados)</div><div id="validTableBox"></div></div>'+
     '<footer style="text-align:center;font-size:11px;color:var(--mut);padding:8px 0">Projeto independente • Licença MIT</footer>';
   $('refreshBtn').onclick=function(){load(apiRef);};
   $('periodFilter').onchange=apply;
@@ -80,6 +82,8 @@ async function load(api){
     devices={};deviceGroupIds={};
     dv.forEach(function(d){if(!d||!d.name)return;var plate=inferPlate(d);devices[d.id]={id:d.id,name:d.name,plate:plate};deviceGroupIds[d.id]=(d.groups||[]).map(function(x){return x.id;});});
     $('deviceFilter').innerHTML='<option value="">Todos os veículos</option>'+Object.values(devices).sort(function(a,b){return a.plate.localeCompare(b.plate);}).map(function(d){return '<option value="'+esc(d.id)+'">'+esc(d.plate)+'</option>';}).join('');
+    var us=await call('User',{}).catch(function(){return[];});
+    users={};(us||[]).forEach(function(u){if(u&&u.id)users[u.id]=u;});
 
     setStatus('Buscando Audit...');
     var aud=await call('Audit',{fromDate:rng.from.toISOString(),toDate:rng.to.toISOString()});
@@ -109,11 +113,35 @@ async function load(api){
     // ordena do mais recente
     allRows.sort(function(a,b){return (b.dateTime||0)-(a.dateTime||0);});
     $('scannedBox').textContent=scanned;
+
+    // leituras válidas (cartões cadastrados) via DriverChange
+    setStatus('Buscando leituras válidas...');
+    var dcs=await call('DriverChange',{fromDate:rng.from.toISOString(),toDate:rng.to.toISOString()}).catch(function(){return[];});
+    var dScanned=(dcs||[]).length;
+    validRows=[];
+    (dcs||[]).forEach(function(d){
+      var did=d.device&&d.device.id;if(!did)return;
+      var drv=d.driver&&d.driver.id;
+      if(!drv||String(drv).toLowerCase().indexOf('unknown')!==-1)return;
+      var dev=devices[did]||{};var u=users[drv]||{};
+      validRows.push({
+        dateTime:d.dateTime?new Date(d.dateTime):null,
+        plate:dev.plate||dev.name||'—',
+        deviceId:did,
+        deviceName:dev.name||dev.plate||'—',
+        driverId:drv,
+        driverName:(u.name||((u.firstName||'')+' '+(u.lastName||'')).trim()||drv),
+        type:d.type||''
+      });
+    });
+    validRows.sort(function(a,b){return (b.dateTime||0)-(a.dateTime||0);});
+    $('dcBox').textContent=dScanned;
+
     filtered=allRows.slice();
     apply();
-    if(!allRows.length){alertMsg('Nenhuma chave não cadastrada encontrada no período. '+scanned+' registros de Audit escaneados.',false,false);setStatus('0 registros');}
-    else{alertMsg('Encontradas '+allRows.length+' tentativa(s) de cartão não cadastrado.',true,false);setStatus(allRows.length+' registros');}
-    render();
+    var msgTxt='Não cadastrados: '+allRows.length+' • Leituras válidas: '+validRows.length;
+    if(!allRows.length && !validRows.length){alertMsg('Nenhum registro encontrado no período. Audit: '+scanned+' • DriverChange: '+dScanned,false,false);setStatus('0 registros');}
+    else{alertMsg(msgTxt,true,false);setStatus(msgTxt);}
   }catch(e){
     console.error('[UK] load error',e);
     setStatus('Erro');
@@ -129,14 +157,17 @@ function apply(){
   var g=$('groupFilter')?$('groupFilter').value:'';
   var d=$('deviceFilter')?$('deviceFilter').value:'';
   var q=($('queryFilter')&&$('queryFilter').value||'').toLowerCase().trim();
-  filtered=allRows.filter(function(r){
+  var pass=function(r){
     if(d && r.deviceId!==d) return false;
     if(g && !(deviceGroupIds[r.deviceId]||[]).some(function(id){return id===g;})) return false;
-    if(q){var blob=(r.plate+' '+r.serial+' '+r.deviceName).toLowerCase();if(blob.indexOf(q)===-1)return false;}
+    if(q){var blob=(r.plate+' '+(r.serial||'')+' '+(r.driverName||'')+' '+(r.deviceName||'')).toLowerCase();if(blob.indexOf(q)===-1)return false;}
     return true;
-  });
+  };
+  filtered=allRows.filter(pass);
+  filteredValid=validRows.filter(pass);
   render();
 }
+function dayKey(d){var t=new Date(d);if(isNaN(t))return '';return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');}
 
 function render(){
   $('countBox').textContent=filtered.length.toLocaleString('pt-BR');
@@ -144,12 +175,49 @@ function render(){
   filtered.forEach(function(r){serials[r.serial]=1;if(r.plate&&r.plate!=='—')plates[r.plate]=1;});
   var uniqCards=Object.keys(serials).length, uniqDev=Object.keys(plates).length;
   var last=filtered[0];
-  var cards=[['Tentativas',filtered.length,'registros no período','var(--red)'],['Cartões não cadastrados',uniqCards,'seriais distintos','var(--orange)'],['Veículos afetados',uniqDev,'veículos distintos','var(--blue)'],['Última tentativa',last?fmtDate(last.dateTime):'—','','var(--gray)']];
-  $('kpisBox').innerHTML=cards.map(function(r){return '<div class="kpi"><span>'+r[0]+'</span><b style="color:'+r[3]+';font-size:'+(r[0]==='Última tentativa'?'14px':'30px')+'">'+esc(r[1])+'</b><small>'+esc(r[2])+'</small></div>';}).join('');
+
+  var vDrivers={},vPlates={},days={};
+  filteredValid.forEach(function(r){if(r.driverId)vDrivers[r.driverId]=1;if(r.plate&&r.plate!=='—')vPlates[r.plate]=1;var k=dayKey(r.dateTime);if(k)days[k]=(days[k]||0)+1;});
+  var vDriversN=Object.keys(vDrivers).length, dayCount=Object.keys(days).length;
+  var vLast=filteredValid[0];
+  var avg=dayCount?(filteredValid.length/dayCount):0;
+
+  var cards=[
+    ['Tentativas',filtered.length,'registros no período','var(--red)'],
+    ['Cartões não cadastrados',uniqCards,'seriais distintos','var(--orange)'],
+    ['Veículos afetados',uniqDev,'veículos distintos','var(--blue)'],
+    ['Última tentativa',last?fmtDate(last.dateTime):'—','','var(--gray)'],
+    ['Leituras válidas',filteredValid.length,'cartões cadastrados','var(--green)'],
+    ['Motoristas distintos',vDriversN,'motoristas','var(--blue)'],
+    ['Média validações/dia',avg?avg.toFixed(1):'0','por dia no período','var(--green)'],
+    ['Última leitura válida',vLast?fmtDate(vLast.dateTime):'—','','var(--gray)']
+  ];
+  $('kpisBox').innerHTML=cards.map(function(r){return '<div class="kpi"><span>'+r[0]+'</span><b style="color:'+r[3]+';font-size:'+(r[0].indexOf('Última')===0?'14px':'30px')+'">'+esc(r[1])+'</b><small>'+esc(r[2])+'</small></div>';}).join('');
 
   renderTable();
   renderSummary(uniqCards,uniqDev);
+  renderDaily(days);
+  renderValidTable();
   renderMap();
+}
+function renderDaily(days){
+  var box=$('dailyBox');if(!box)return;
+  var keys=Object.keys(days).sort().reverse().slice(0,31);
+  if(!keys.length){box.innerHTML='<div>Sem leituras válidas no período.</div>';return;}
+  var max=Math.max.apply(null,keys.map(function(k){return days[k];}));
+  box.innerHTML='<div style="display:grid;gap:8px">'+keys.map(function(k){
+    var w=Math.max(6,Math.round(days[k]/max*100));
+    var lbl=k.split('-').reverse().join('/');
+    return '<div><div style="display:flex;justify-content:space-between"><span class="mono">'+esc(lbl)+'</span><b>'+days[k]+'</b></div><div style="height:10px;background:#eaf4fb;border-radius:20px;overflow:hidden;margin-top:3px"><div style="height:10px;width:'+w+'%;background:var(--green);border-radius:20px"></div></div></div>';
+  }).join('')+'</div>';
+}
+function renderValidTable(){
+  var box=$('validTableBox');if(!box)return;
+  if(!filteredValid.length){box.innerHTML='<div style="padding:25px;text-align:center;color:var(--mut)">Nenhuma leitura válida.</div>';return;}
+  box.innerHTML='<table><thead><tr><th>Data/Hora</th><th>Veículo (Placa)</th><th>Motorista</th><th>Status</th></tr></thead><tbody>'+
+    filteredValid.map(function(r){
+      return '<tr><td>'+fmtDate(r.dateTime)+'</td><td><b style="color:var(--txt)">'+esc(r.plate)+'</b></td><td>'+esc(r.driverName)+'</td><td><span class="badge okb">Válido</span></td></tr>';
+    }).join('')+'</tbody></table>';
 }
 function renderSummary(uniqCards,uniqDev){
   var byCard={};filtered.forEach(function(r){byCard[r.serial]=(byCard[r.serial]||0)+1;});
