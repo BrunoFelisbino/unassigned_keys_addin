@@ -39,7 +39,10 @@ async function loadAddinData(){
     addinState.schemaVersion=addinState.schemaVersion||1;
     addinState.settings=addinState.settings||{period:'today'};
     addinState.links=addinState.links||{};
-  }catch(e){console.warn('[UK] AddInData indisponível; seguindo em memória',e);addinState=defaultState();}
+  }catch(e){console.warn('[UK] AddInData indisponível; usando localStorage',e);try{var raw=localStorage.getItem('uk_addin_state');addinState=raw?parseDetails(raw):defaultState();}catch(_){addinState=defaultState();}if(!addinState)addinState=defaultState();}
+  addinState.schemaVersion=addinState.schemaVersion||1;
+  addinState.settings=addinState.settings||{period:'today'};
+  addinState.links=addinState.links||{};
 }
 async function saveAddinData(){
   if(!apiRef||!addinState)return;
@@ -47,7 +50,7 @@ async function saveAddinData(){
     var details=JSON.stringify(addinState),groups=[{id:'GroupCompanyId'}];
     if(addinDataId){await invoke('Set',{typeName:'AddInData',entity:{id:addinDataId,addInId:ADDIN_ID,groups:groups,details:details}});}
     else{addinDataId=await invoke('Add',{typeName:'AddInData',entity:{addInId:ADDIN_ID,groups:groups,details:details}});}
-  }catch(e){console.warn('[UK] falha ao salvar AddInData',e);alertMsg('Falha ao salvar AddInData: '+(e&&(e.message||e.name||JSON.stringify(e)))||'desconhecido',false,true);}
+  }catch(e){console.warn('[UK] falha ao salvar AddInData',e);try{localStorage.setItem('uk_addin_state',JSON.stringify(addinState));}catch(_){alertMsg('Falha ao salvar AddInData: '+(e&&(e.message||e.name||JSON.stringify(e)))||'desconhecido',false,true);}}
 }
 function linkKey(did,drv){return String(did)+'::'+String(drv);}
 function getLink(did,drv){return addinState&&addinState.links?addinState.links[linkKey(did,drv)]:null;}
