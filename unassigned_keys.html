@@ -88,12 +88,15 @@ async function load(api){
     (aud||[]).forEach(function(a){
       var txt=((a.name||'')+' '+(a.comment||'')).replace(/\s+/g,' ').trim();
       var low=txt.toLowerCase();
-      // aceita entradas relacionadas a chave/cartão/motorista não atribuído
+      // ignora eventos de segurança que contêm "key" (create/restore/saved/api/backup...)
+      if(/(create|restore|saved|save|api|security|backup|certificate|revoke|delete|update|edit).{0,12}key/.test(low)) return;
       var matchKey=(low.indexOf('key')!==-1||low.indexOf('chave')!==-1||low.indexOf('cart')!==-1||low.indexOf('inserir')!==-1);
       var matchUnassigned=(low.indexOf('unassign')!==-1||low.indexOf('não atrib')!==-1||low.indexOf('nao atrib')!==-1||low.indexOf('não cadastr')!==-1||low.indexOf('nao cadastr')!==-1||low.indexOf('without')!==-1);
       if(!matchKey && !matchUnassigned) return;
       var serial=extractSerial(txt);
       var plate=extractPlate(txt);
+      // descarta registros sem cartão e sem veículo (ruído)
+      if(!serial && !plate) return;
       var devInfo=findDeviceByPlate(plate);
       allRows.push({
         dateTime:a.dateTime?new Date(a.dateTime):null,
@@ -118,7 +121,7 @@ async function load(api){
   }
 }
 function inferPlate(d){var p=(d.licensePlate||'').trim();if(p)return p;var n=(d.name||'').trim();var m=n.match(/^([^|]+)\s*\|/);if(m&&m[1])return m[1].trim();return n||d.id;}
-function extractSerial(txt){var m=txt.match(/\b\d{6,20}\b/);return m?m[0]:'';}
+function extractSerial(txt){var m=txt.match(/\b\d{6,20}\b/);if(m)return m[0];var h=txt.match(/\b(?=[0-9A-Fa-f]*\d)[0-9A-Fa-f]{8,20}\b/);return h?h[0]:'';}
 function extractPlate(txt){var m=txt.match(/\b[A-Z]{3}\d[A-Z0-9]\d{2}\b/);return m?m[0]:'';}
 function findDeviceByPlate(plate){if(!plate)return null;var k=Object.keys(devices);for(var i=0;i<k.length;i++){var d=devices[k[i]];if(d.plate===plate||(d.name||'').indexOf(plate)!==-1)return d;}return null;}
 
