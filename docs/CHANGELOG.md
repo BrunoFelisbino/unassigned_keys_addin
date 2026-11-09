@@ -4,6 +4,16 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.0.8] — 2026-11-09
+
+### Adicionado
+- Ação **Vincular cartões** (por placa) e **Vincular** (por linha) para enviar o cartão à
+  *Authorized Driver List* (authlist) do equipamento via `TextMessage`/`DriverAuthListContent`.
+
+### Observações
+- A authlist não é legível pela API; o add-in envia o comando, mas o status continua baseado em grupos.
+- Requer authlist habilitada no GO e permissão de `Add` em `TextMessage`.
+
 ## [1.0.7] — 2026-11-09
 
 ### Alterado

@@ -49,7 +49,7 @@ function shell(){
     '<div class="panel"><div class="pt">Tentativas de cartões não cadastrados</div><div id="tableBox"></div></div>'+
     '<div class="panel"><div class="pt">Viagens validadas por dia (cartões cadastrados)</div><div id="dailyBox" style="color:var(--mut);font-size:12px">—</div></div>'+
     '<div class="panel"><div class="pt">Leituras válidas autorizadas (cartões cadastrados)</div><div id="validTableBox"></div></div>'+
-    '<div class="panel"><div class="pt">Cartões cadastrados, mas sem autorização no veículo</div><div style="font-size:11px;color:var(--mut);margin:-6px 0 10px">Regra: grupos do motorista × grupos do veículo. Passe o mouse no status para ver os grupos.</div><div id="unauthTableBox"></div></div>'+
+    '<div class="panel"><div class="pt">Cartões cadastrados, mas sem autorização no veículo</div><div style="font-size:11px;color:var(--mut);margin:-6px 0 10px">Regra: grupos do motorista × grupos do veículo (passe o mouse no status para ver os grupos). Use <b>Vincular</b> para enviar o cartão à <i>driver list</i> (authlist) do equipamento — a authlist precisa estar habilitada no GO.</div><div id="unauthTableBox"></div></div>'+
     '<footer style="text-align:center;font-size:11px;color:var(--mut);padding:8px 0">Projeto independente • Licença MIT</footer>';
   $('refreshBtn').onclick=function(){load(apiRef);};
   $('periodFilter').onchange=apply;
@@ -91,7 +91,7 @@ async function load(api){
       var nm=u.name||((u.firstName||'')+' '+(u.lastName||'')).trim()||u.id;
       if(!email && /@/.test(nm))email=nm;
       var ukeys=((u.keys||[]).map(function(k){return k&&(k.serialNumber||k.serial||k.id);}).filter(Boolean));
-      users[u.id]={id:u.id,name:nm,email:email,groupIds:grpIds,keys:ukeys};
+      users[u.id]={id:u.id,name:nm,email:email,groupIds:grpIds,keys:ukeys,rawKeys:(u.keys||[])};
     });
 
     setStatus('Buscando Audit...');
@@ -242,26 +242,61 @@ function renderDaily(days){
 function renderAgg(boxId,rows,mode){
   var box=$(boxId);if(!box)return;
   if(!rows.length){box.innerHTML='<div style="padding:25px;text-align:center;color:var(--mut)">'+(mode==='unauth'?'Nenhum cartão cadastrado fora do grupo do veículo.':'Nenhuma leitura autorizada.')+'</div>';return;}
+  var isU=(mode==='unauth');
   var map={};
-  rows.forEach(function(r){var k=r.plate||'—';if(!map[k])map[k]={plate:k,rows:[],drivers:{}};map[k].rows.push(r);map[k].drivers[r.driverId]=1;});
+  rows.forEach(function(r){var k=r.plate||'—';if(!map[k])map[k]={plate:k,rows:[],drivers:{},deviceId:''};map[k].rows.push(r);map[k].drivers[r.driverId]=1;if(!map[k].deviceId&&r.deviceId)map[k].deviceId=r.deviceId;});
   var arr=Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){return b.rows.length-a.rows.length;});
   var top=arr.slice(0,10);
   var html='<div style="display:grid;gap:8px">'+top.map(function(grp){
     var detail=grp.rows.slice(0,300).map(function(r){
       var grpTitle=!r.authorized?(' title="Grupos motorista: '+esc(r.driverGroupNames||'—')+' | Grupos veículo: '+esc(r.deviceGroupNames||'—')+'"'):'';
-      var badge=(mode==='unauth')?('<span class="badge warnb"'+grpTitle+'>Não autorizado</span>'):(r.authorized?'<span class="badge okb">Válido</span>':('<span class="badge warnb"'+grpTitle+'>Fora do grupo</span>'));
-      return '<tr><td>'+fmtDate(r.dateTime)+'</td><td><span class="mono" title="'+esc(r.serialAll||'')+'">'+esc(r.serial||'—')+'</span></td><td>'+esc(r.driverName)+'</td><td class="mono">'+esc(r.driverEmail||'—')+'</td><td>'+badge+'</td></tr>';
+      var badge=(isU)?('<span class="badge warnb"'+grpTitle+'>Não autorizado</span>'):(r.authorized?'<span class="badge okb">Válido</span>':('<span class="badge warnb"'+grpTitle+'>Fora do grupo</span>'));
+      var action=isU&&r.deviceId?('<td><button class="uk-link" data-dev="'+esc(r.deviceId)+'" data-driver="'+esc(r.driverId)+'" style="height:24px;padding:0 8px;font-size:10px">Vincular</button></td>'):(isU?'<td>—</td>':'');
+      return '<tr><td>'+fmtDate(r.dateTime)+'</td><td><span class="mono" title="'+esc(r.serialAll||'')+'">'+esc(r.serial||'—')+'</span></td><td>'+esc(r.driverName)+'</td><td class="mono">'+esc(r.driverEmail||'—')+'</td><td>'+badge+'</td>'+action+'</tr>';
     }).join('');
+    var bulk=isU&&grp.deviceId?('<button class="uk-link-all" data-dev="'+esc(grp.deviceId)+'" data-drivers="'+Object.keys(grp.drivers).join(',')+'" style="height:26px;padding:0 10px;font-size:10px">Vincular cartões</button>'):'';
     return '<details style="border:1px solid var(--bd);border-radius:12px;background:var(--card2);overflow:hidden">'+
       '<summary style="cursor:pointer;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px">'+
         '<span><b style="color:var(--txt);font-size:13px">'+esc(grp.plate)+'</b> <span style="color:var(--mut)">• '+grp.rows.length+' leitura(s) autenticada(s)</span></span>'+
-        '<span class="badge '+(mode==='unauth'?'riskb':'okb')+'">'+Object.keys(grp.drivers).length+' motorista(s)</span>'+
+        '<span style="display:flex;align-items:center;gap:8px">'+bulk+'<span class="badge '+(isU?'riskb':'okb')+'">'+Object.keys(grp.drivers).length+' motorista(s)</span></span>'+
       '</summary>'+
-      '<div style="padding:0 10px 10px"><table><thead><tr><th>Data/Hora</th><th>Cartão (Serial)</th><th>Motorista</th><th>E-mail</th><th>Status</th></tr></thead><tbody>'+detail+'</tbody></table></div>'+
+      '<div style="padding:0 10px 10px"><table><thead><tr><th>Data/Hora</th><th>Cartão (Serial)</th><th>Motorista</th><th>E-mail</th><th>Status</th>'+(isU?'<th>Ação</th>':'')+'</tr></thead><tbody>'+detail+'</tbody></table></div>'+
     '</details>';
   }).join('')+'</div>';
   if(arr.length>10)html+='<div style="margin-top:8px;color:var(--mut);font-size:11px">Mostrando os 10 veículos com mais leituras de '+arr.length+' no total.</div>';
   box.innerHTML=html;
+  if(isU){
+    box.querySelectorAll('.uk-link').forEach(function(b){b.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();linkDrivers(this.getAttribute('data-dev'),[this.getAttribute('data-driver')],this);});});
+    box.querySelectorAll('.uk-link-all').forEach(function(b){b.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();linkDrivers(this.getAttribute('data-dev'),(this.getAttribute('data-drivers')||'').split(',').filter(Boolean),this);});});
+  }
+}
+function toDriverKey(k){
+  if(!k)return null;var dk={};
+  if(k.keyId!=null)dk.keyId=k.keyId;else if(k.id!=null)dk.keyId=k.id;else if(k.serialNumber!=null)dk.keyId=k.serialNumber;
+  if(k.driverKeyType!=null)dk.driverKeyType=k.driverKeyType;
+  return dk.keyId?dk:null;
+}
+function sendAuthKey(deviceId,key){
+  return new Promise(function(ok,err){
+    var dk=toDriverKey(key);if(!dk){err(new Error('cartão sem keyId'));return;}
+    apiRef.call('Add',{typeName:'TextMessage',entity:{device:{id:deviceId},isDirectionToVehicle:true,messageContent:{contentType:'DriverAuthList',driverKey:dk,addToAuthList:true,clearAuthList:false}}},ok,err);
+  });
+}
+async function linkDrivers(deviceId,driverIds,btn){
+  if(!apiRef){alertMsg('Abra dentro do MyGeotab para vincular.',false,true);return;}
+  var keys=[],names=[],missing=[];
+  (driverIds||[]).forEach(function(id){var u=users[id];if(u&&u.rawKeys&&u.rawKeys.length){u.rawKeys.forEach(function(k){keys.push({key:k,driver:u.name});});names.push(u.name);}else{missing.push((u&&u.name)||id);}});
+  if(!keys.length){alertMsg('Nenhum cartão cadastrado (User.keys) para vincular'+(missing.length?': '+missing.join(', '):'.'),false,true);return;}
+  var msg='Enviar '+keys.length+' cartão(ões)'+(driverIds.length>1?(' de '+names.length+' motorista(s)'):'')+' para a driver list do veículo?\n\nA authlist precisa estar habilitada no GO e existe limite de cartões por equipamento.';
+  if(!window.confirm(msg))return;
+  var old=btn.textContent;btn.disabled=true;btn.textContent='Enviando...';
+  var okCount=0,fail=[];
+  for(var i=0;i<keys.length;i++){
+    try{await sendAuthKey(deviceId,keys[i].key);okCount++;}catch(e){fail.push(keys[i].driver+': '+(e&&(e.message||e.name)||e));}
+  }
+  btn.disabled=false;
+  if(fail.length){btn.textContent=old;alertMsg('Enviados '+okCount+' de '+keys.length+'. Falhas: '+fail.slice(0,3).join(' | '),false,true);}
+  else{btn.textContent='Vinculado ✓';btn.style.color='#047857';btn.style.borderColor='#10b981';alertMsg(okCount+' cartão(ões) enviados para a driver list. O GO aplica quando conectar.',true,false);}
 }
 function renderValidTable(){renderAgg('validTableBox',filteredValid.filter(function(r){return r.authorized;}),'valid');}
 function renderUnauthTable(){renderAgg('unauthTableBox',filteredValid.filter(function(r){return !r.authorized;}),'unauth');}

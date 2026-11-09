@@ -113,7 +113,36 @@ function isAuthorized(driverId, deviceId) {
 `authGroups()` remove o grupo raiz `GroupCompanyId`. Assim, filiais/equipes distintas são
 detectadas como "sem autorização"; se todos estiverem no mesmo grupo raiz, nada é marcado.
 
-### 5. Mapa — `DeviceStatusInfo`
+### 5. Vínculo na driver list (authlist)
+
+O botão **Vincular** envia um `TextMessage` com `DriverAuthListContent` para o equipamento,
+adicionando o cartão à *Authorized Driver List* (authlist) do IOX-NFCREADERA:
+
+```js
+api.call('Add', {
+  typeName: 'TextMessage',
+  entity: {
+    device: { id: deviceId },
+    isDirectionToVehicle: true,
+    messageContent: {
+      contentType: 'DriverAuthList',
+      driverKey: { keyId: key.keyId, driverKeyType: key.driverKeyType },
+      addToAuthList: true,
+      clearAuthList: false
+    }
+  }
+}, success, error);
+```
+
+- `driverKey` vem de `User.keys` (guardado em `users[id].rawKeys`).
+- **Vincular cartões** (por placa) envia todos os motoristas distintos daquela placa.
+- **Vincular** (por linha) envia só aquele motorista.
+- A authlist **não é legível** pela API; o add-in não consegue exibir o estado atual, apenas enviar
+  comandos de adicionar/remover. Por isso o status continua baseado em grupos.
+- Requer authlist habilitada no GO, permissão de `Add` em `TextMessage` e respeita o limite de
+  cartões por equipamento.
+
+### 6. Mapa — `DeviceStatusInfo`
 
 Para os veículos com tentativas não cadastradas, busca a última posição conhecida e plota
 `circleMarker` no Leaflet, ajustando o zoom ao conjunto de pontos.

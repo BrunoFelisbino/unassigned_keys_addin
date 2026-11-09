@@ -7,7 +7,7 @@ Add-in para **MyGeotab** que audita o uso de cartões/chaves de motorista em ve�
 - cartões **cadastrados, mas sem autorização** para o veículo em que foram usados;
 - KPIs, mapa dos veículos e contagem de **validações por dia**.
 
-> Versão atual: **1.0.7** · Licença **MIT** · Autor: Bruno Felisbino
+> Versão atual: **1.0.8** · Licença **MIT** · Autor: Bruno Felisbino
 
 ---
 
@@ -50,7 +50,7 @@ URLs publicadas:
 - **Tentativas de cartões não cadastrados** — tabela com Data/Hora, Placa, Cartão (serial), Status.
 - **Viagens validadas por dia** — barras por dia com a contagem de leituras válidas.
 - **Leituras válidas autorizadas (cartões cadastrados)** — **top 10 placas** aglomeradas; clique na placa para expandir os detalhes (Data/Hora, Cartão, Motorista, E-mail, Status).
-- **Cartões cadastrados, mas sem autorização no veículo** — mesmo formato, com os casos fora do grupo (não se repetem na seção de autorizadas; o tooltip do status mostra os grupos do motorista e do veículo).
+- **Cartões cadastrados, mas sem autorização no veículo** — mesmo formato, com os casos fora do grupo (não se repetem na seção de autorizadas; o tooltip do status mostra os grupos do motorista e do veículo). Cada placa tem o botão **Vincular cartões** e cada linha o botão **Vincular**, que enviam o cartão para a *driver list* (authlist) do equipamento.
 
 ### Filtros
 
@@ -92,6 +92,47 @@ O grupo raiz da empresa (`GroupCompanyId`) é ignorado nessa comparação para p
 Se algum dos lados não tiver grupos, o registro é tratado como autorizado (evita falso positivo).
 
 > Essa é a regra padrão. Se a sua operação usa outro critério (ex.: grupo específico por filial ou lista de motoristas por veículo), ajuste a função `isAuthorized()` em `unassigned_keys.html`.
+
+### Vínculo automático na driver list (authlist)
+
+Quando o veículo muda de regional, o cartão de outra regional precisa ser **re-vinculado à
+Authorized Driver List** do equipamento (IOX-NFCREADERA). O add-in permite enviar esse vínculo
+pela API, sem abrir o MyGeotab item a item:
+
+- **Vincular cartões** (por placa) — envia à authlist do veículo todos os cartões distintos que
+  apareceram "sem autorização" naquela placa.
+- **Vincular** (por linha) — envia apenas o cartão daquele motorista.
+
+Internamente é enviado um `TextMessage` com `messageContent` do tipo `DriverAuthList`
+(`DriverAuthListContent`), usando o `driverKey` do cadastro do motorista (`User.keys`) e
+`addToAuthList: true`:
+
+```js
+api.call('Add', {
+  typeName: 'TextMessage',
+  entity: {
+    device: { id: deviceId },
+    isDirectionToVehicle: true,
+    messageContent: {
+      contentType: 'DriverAuthList',
+      driverKey: user.keys[0],   // { keyId, driverKeyType }
+      addToAuthList: true,
+      clearAuthList: false
+    }
+  }
+}, success, error);
+```
+
+**Requisitos e cuidados:**
+
+- A **authlist precisa estar habilitada** no GO (parâmetro de configuração do IOX-NFCREADERA);
+  sem isso o equipamento ignora a mensagem.
+- É uma operação de **escrita**: exige permissão para `Add` de `TextMessage`.
+- Existe **limite de cartões por equipamento** (motivo da fragmentação por regional). Por isso o
+  vínculo é feito por veículo/cartão, não em massa para os 4 mil motoristas.
+- A mensagem fica **na fila** e é aplicada quando o equipamento conectar.
+- O status "sem autorização" continua baseado em **grupos** (não lê a authlist do equipamento,
+  que não é exposta pela API); o botão é a ação operacional de correção, não um espelho da authlist.
 
 ---
 
@@ -145,7 +186,7 @@ O GitHub Pages usa CDN e pode servir a versão anterior por alguns minutos. Para
 atualização de forma confiável:
 
 1. Edite `unassigned_keys.html`.
-2. Suba a `version` em `unassigned_keys_addin_config.json` e o `?v=N` da URL (ex.: `?v=8`).
+2. Suba a `version` em `unassigned_keys_addin_config.json` e o `?v=N` da URL (ex.: `?v=9`).
 3. Faça commit/push.
 4. No MyGeotab, remova e re-adicione o add-in (ou aguarde o CDN) e dê **Ctrl+F5**.
 
@@ -155,9 +196,12 @@ Esse `?v=N` é o que força o navegador a buscar o novo HTML.
 
 ## Permissões necessárias
 
-O usuário do add-in precisa de leitura para: `Audit`, `DriverChange`, `User`, `Device`, `Group`
-e `DeviceStatusInfo`. Em contas com restrição de segurança, o acesso ao **Audit** pode exigir
-perfil/limpeza de segurança específica. Sem `Audit`/`DriverChange`, as listas ficam vazias.
+Para visualizar, o usuário precisa de leitura para: `Audit`, `DriverChange`, `User`, `Device`,
+`Group` e `DeviceStatusInfo`. Em contas com restrição de segurança, o acesso ao **Audit** pode
+exigir perfil/limpeza de segurança específica. Sem `Audit`/`DriverChange`, as listas ficam vazias.
+
+Para usar o botão **Vincular** (authlist), é necessário permissão de **escrita** para `Add` de
+`TextMessage` e a authlist habilitada no equipamento.
 
 ---
 
@@ -171,6 +215,8 @@ perfil/limpeza de segurança específica. Sem `Audit`/`DriverChange`, as listas 
 | Cartão "—" nas válidas | Motorista sem cartão em `User.keys` | Cadastre a chave no motorista |
 | E-mail "—" | Conta não expõe e-mail no objeto `User` | Usar o login/`name` ou ajustar `load()` |
 | "Sem autorização" vazio | Todos os motoristas/veículos no mesmo grupo | Ajustar a regra em `isAuthorized()` |
+| "Vincular" sem efeito | Authlist desabilitada no GO ou equipamento offline | Habilitar a authlist; o GO aplica quando conectar |
+| "Vincular" retorna erro | Sem permissão de `Add` em `TextMessage` ou cartão sem `keyId` | Conferir permissões e `User.keys` |
 | 404 em `translations/*.json` | Arquivos ausentes | Já incluídos na raiz do Pages |
 
 Detalhes técnicos em [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
