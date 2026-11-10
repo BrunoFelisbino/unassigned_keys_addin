@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1.6] — 2026-11-10
+
+### Adicionado
+- Histórico de tentativas de envio à driver list no período selecionado, incluindo falhas e envios parciais.
+- Resultado do último envio junto ao motorista na seção de cartões sem autorização.
+
+### Corrigido
+- A placa expandida continua aberta após o envio; o feedback não desaparece ao recriar a tabela.
+- O texto distingue comando aceito pela API de vínculo aplicado no equipamento, que depende da conexão do GO.
+- Correção do ID retornado ao criar o registro `AddInData`.
+
 Todas as mudanças relevantes deste projeto são documentadas aqui.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [Versionamento Semântico](https://semver.org/lang/pt-BR/).

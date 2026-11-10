@@ -1,10 +1,10 @@
 {
   "name": "unassigned_keys",
   "supportEmail": "bruno_felisbino@hotmail.com",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "items": [
     {
-      "url": "https://brunofelisbino.github.io/unassigned_keys_addin/unassigned_keys.html?v=16",
+      "url": "https://brunofelisbino.github.io/unassigned_keys_addin/unassigned_keys.html?v=17",
       "path": "ActivityLink/",
       "menuName": {
         "en": "Unassigned Keys",

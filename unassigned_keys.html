@@ -14,6 +14,7 @@
 <style>
 *{box-sizing:border-box}:root{--bg:#f5f8fc;--card:#fff;--card2:#f8fbff;--txt:#172033;--mut:#64748b;--mut2:#94a3b8;--bd:#e5eaf1;--blue:#0ea5e9;--blue2:#0369a1;--green:#10b981;--yellow:#f59e0b;--orange:#f97316;--red:#ef4444;--gray:#64748b;--shadow:0 12px 28px rgba(15,23,42,.06);--mono:Consolas,monospace}body,#app{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);min-height:100vh;color:var(--txt);padding:16px 20px;background-image:radial-gradient(circle,rgba(15,23,42,.045) 1px,transparent 1px);background-size:24px 24px}.head,.bar,.info,.panel,.kpi{background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:var(--shadow)}.head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;margin-bottom:12px}.title{display:flex;gap:10px;align-items:center;font-weight:800;font-size:18px}.ico{width:46px;height:46px;border-radius:10px;background:#000;display:grid;place-items:center;overflow:hidden;color:#fff;font-weight:800;font-size:14px}.sub{font-family:var(--mono);font-size:10px;color:var(--mut);font-weight:400}.pill{font-family:var(--mono);font-size:10px;color:var(--blue2);background:#fff;border:1px solid var(--bd);border-radius:99px;padding:5px 12px}.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px;margin-bottom:12px}.info{display:flex;gap:16px;flex-wrap:wrap;padding:9px 14px;margin-bottom:12px;color:var(--mut);font-size:12px}button,select,input{height:32px;border-radius:8px;border:1px solid var(--bd);background:#fff;color:var(--txt);font-size:11px;padding:0 10px}button{font-weight:700;cursor:pointer}.primary{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border:0}.alert{padding:10px 14px;border-radius:10px;margin-bottom:12px;font-size:12px;background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.22);color:var(--blue2)}.alert.ok{background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.22);color:#047857}.alert.err{background:rgba(239,68,68,.11);border-color:rgba(239,68,68,.22);color:#991b1b}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:12px}.kpi{padding:16px 14px;min-height:116px;position:relative;overflow:hidden}.kpi span{display:block;color:var(--mut2);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}.kpi b{font-family:var(--mono);font-size:30px;line-height:1}.kpi small{display:block;color:var(--mut);font-size:12px;margin-top:4px}.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}.panel{padding:16px 18px;margin-bottom:12px}.pt{font-size:12px;font-weight:800;color:var(--blue2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}.pt:before{content:'';display:inline-block;width:3px;height:12px;background:linear-gradient(var(--blue),var(--blue2));border-radius:2px;margin-right:7px;vertical-align:-2px}table{width:100%;border-collapse:collapse;font-size:11px}th{text-align:left;background:#f0f9ff;color:var(--blue2);font-size:9px;text-transform:uppercase;letter-spacing:.06em;padding:8px 10px}td{padding:8px 10px;border-bottom:1px solid #edf2f7;color:var(--mut);vertical-align:middle}tr:hover td{background:#f8fbff}.badge{display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:800;font-family:var(--mono)}.okb{background:rgba(16,185,129,.12);color:#047857}.warnb{background:rgba(245,158,11,.13);color:#92400e}.riskb{background:rgba(239,68,68,.11);color:#991b1b}.map{height:340px;border:1px solid var(--bd);border-radius:16px;overflow:hidden}#summaryBox{max-height:340px;overflow:auto}.mono{font-family:var(--mono)}@media(max-width:900px){.cols{grid-template-columns:1fr}}@media(max-width:700px){body,#app{padding:10px}.bar{align-items:stretch;flex-direction:column}.grid{grid-template-columns:1fr}}
 button[disabled]{opacity:.78;cursor:wait}.spinner{width:14px;height:14px;display:inline-block;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;vertical-align:-2px;margin-right:7px;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.uk-feedback{font-size:10px;margin-top:4px;line-height:1.4}.uk-feedback.ok{color:#047857}.uk-feedback.err{color:#991b1b}.uk-feedback.pending{color:var(--blue2)}.uk-history{margin-top:14px;border-top:1px solid var(--bd);padding-top:12px}.uk-history summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--blue2)}.uk-history-scroll{overflow:auto;max-height:300px;margin-top:10px}.uk-history td{white-space:nowrap}.uk-history td:last-child{white-space:normal;min-width:180px}
 </style>
 <script>
 (function(){
@@ -29,7 +30,7 @@ var fmtDate=function(d){var t=new Date(d);return isNaN(t)?'-':t.toLocaleString('
 var call=function(t,s){return new Promise(function(ok,err){apiRef.call('Get',{typeName:t,search:s||{}},ok,err);});};
 var invoke=function(m,p){return new Promise(function(ok,err){apiRef.call(m,p,ok,err);});};
 function parseDetails(x){if(!x)return{};if(typeof x==='string'){try{return JSON.parse(x);}catch(e){return{};}}return x;}
-function defaultState(){return{schemaVersion:1,settings:{period:'today'},links:{}};}
+function defaultState(){return{schemaVersion:2,settings:{period:'today'},links:{},linkHistory:[]};}
 async function loadAddinData(){
   try{
     var r=await call('AddInData',{addInId:ADDIN_ID});
@@ -43,14 +44,15 @@ async function loadAddinData(){
   addinState.schemaVersion=addinState.schemaVersion||1;
   addinState.settings=addinState.settings||{period:'today'};
   addinState.links=addinState.links||{};
+  addinState.linkHistory=addinState.linkHistory||[];
 }
 async function saveAddinData(){
   if(!apiRef||!addinState)return;
   try{
     var details=JSON.stringify(addinState),groups=[{id:'GroupCompanyId'}];
     if(addinDataId){await invoke('Set',{typeName:'AddInData',entity:{id:addinDataId,addInId:ADDIN_ID,groups:groups,details:details}});}
-    else{addinDataId=await invoke('Add',{typeName:'AddInData',entity:{addInId:ADDIN_ID,groups:groups,details:details}});}
-  }catch(e){console.warn('[UK] falha ao salvar AddInData',e);try{localStorage.setItem('uk_addin_state',JSON.stringify(addinState));}catch(_){alertMsg('Falha ao salvar AddInData: '+(e&&(e.message||e.name||JSON.stringify(e)))||'desconhecido',false,true);}}
+    else{var added=await invoke('Add',{typeName:'AddInData',entity:{addInId:ADDIN_ID,groups:groups,details:details}});addinDataId=added&&added.id||added;}
+  }catch(e){console.warn('[UK] falha ao salvar AddInData',e);try{localStorage.setItem('uk_addin_state',JSON.stringify(addinState));alertMsg('Histórico salvo apenas neste navegador: AddInData indisponível.',false,true);}catch(_){alertMsg('Falha ao salvar histórico: '+(e&&(e.message||e.name||JSON.stringify(e)))||'desconhecido',false,true);}}
 }
 function linkKey(did,drv){return String(did)+'::'+String(drv);}
 function getLink(did,drv){return addinState&&addinState.links?addinState.links[linkKey(did,drv)]:null;}
@@ -59,6 +61,12 @@ function recordLinkLocal(deviceId,driverId,keyIds,plate,driverName){
   addinState.links=addinState.links||{};
   addinState.links[linkKey(deviceId,driverId)]={deviceId:deviceId,driverId:driverId,keyIds:keyIds,plate:plate||'',driverName:driverName||'',linkedAt:new Date().toISOString(),linkedBy:sessionUser||''};
 }
+function recordAttempt(entry){
+  addinState.linkHistory=addinState.linkHistory||[];
+  addinState.linkHistory.unshift(entry);
+  addinState.linkHistory=addinState.linkHistory.slice(0,500);
+}
+function latestAttempt(deviceId,driverId){return(addinState&&addinState.linkHistory||[]).find(function(x){return x.deviceId===deviceId&&x.driverId===driverId;});}
 function fmtShort(iso){var t=new Date(iso);return isNaN(t)?'—':t.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
 
 function shell(){
@@ -84,7 +92,7 @@ function shell(){
     '<div class="panel"><div class="pt">Tentativas de cartões não cadastrados</div><div id="tableBox"></div></div>'+
     '<div class="panel"><div class="pt">Viagens validadas por dia (cartões cadastrados)</div><div id="dailyBox" style="color:var(--mut);font-size:12px">—</div></div>'+
     '<div class="panel"><div class="pt">Leituras válidas autorizadas (cartões cadastrados)</div><div id="validTableBox"></div></div>'+
-    '<div class="panel"><div class="pt">Cartões cadastrados, mas sem autorização no veículo</div><div style="font-size:11px;color:var(--mut);margin:-6px 0 10px">Regra: grupos do motorista × grupos do veículo (passe o mouse no status para ver os grupos). Use <b>Vincular</b> para enviar o cartão à <i>driver list</i> (authlist) do equipamento — a authlist precisa estar habilitada no GO.</div><div id="unauthTableBox"></div></div>'+
+    '<div class="panel"><div class="pt">Cartões cadastrados, mas sem autorização no veículo</div><div style="font-size:11px;color:var(--mut);margin:-6px 0 10px">Regra: grupos do motorista × grupos do veículo (passe o mouse no status para ver os grupos). Use <b>Vincular</b> para enviar o cartão à <i>driver list</i> (authlist) do equipamento — a authlist precisa estar habilitada no GO.</div><div id="unauthTableBox"></div><div id="linkHistoryBox"></div></div>'+
     '<footer style="text-align:center;font-size:11px;color:var(--mut);padding:8px 0">Projeto independente • Licença MIT</footer>';
   $('refreshBtn').onclick=function(){load(apiRef);};
   $('periodFilter').onchange=function(){if(addinState){addinState.settings=addinState.settings||{};addinState.settings.period=this.value;saveAddinData();}apply();};
@@ -99,6 +107,15 @@ function applySettings(){
 }
 function setStatus(t){var e=$('statusBox');if(e)e.textContent=t;}
 function alertMsg(t,ok,err){var e=$('alertBox');if(!e)return;e.style.display=t?'block':'none';e.className='alert '+(ok?'ok':err?'err':'');e.textContent=t||'';}
+function renderHistory(){
+  var box=$('linkHistoryBox');if(!box)return;
+  var history=(addinState&&addinState.linkHistory||[]),from=getRange().from;
+  var rows=history.filter(function(x){return new Date(x.at)>=from;});
+  box.innerHTML='<details class="uk-history" open><summary>Histórico de envios — '+rows.length+' tentativa(s) no período</summary>'+
+    (rows.length?'<div class="uk-history-scroll"><table><thead><tr><th>Data/Hora</th><th>Placa</th><th>Motorista</th><th>Cartões</th><th>Resultado</th></tr></thead><tbody>'+rows.map(function(x){
+      return '<tr><td>'+fmtDate(x.at)+'</td><td>'+esc(x.plate||'—')+'</td><td>'+esc(x.driverName||'—')+'</td><td>'+esc(x.sent)+' de '+esc(x.total)+'</td><td><span class="badge '+(x.failed?'riskb':'okb')+'">'+(x.failed?'Falha parcial ou total':'Aceito pela API')+'</span> '+esc(x.error||'Aguardando aplicação no GO')+'</td></tr>';
+    }).join('')+'</tbody></table></div>':'<div style="padding:12px;color:var(--mut);font-size:11px">Nenhuma tentativa registrada neste período.</div>')+'</details>';
+}
 
 function getRange(){
   var now=new Date(), today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
@@ -266,6 +283,7 @@ function render(){
   renderDaily(days);
   renderValidTable();
   renderUnauthTable();
+  renderHistory();
   renderMap();
 }
 function renderDaily(days){
@@ -281,6 +299,7 @@ function renderDaily(days){
 }
 function renderAgg(boxId,rows,mode){
   var box=$(boxId);if(!box)return;
+  var openPlates={};box.querySelectorAll('details[open][data-plate]').forEach(function(el){openPlates[el.getAttribute('data-plate')]=true;});
   if(!rows.length){box.innerHTML='<div style="padding:25px;text-align:center;color:var(--mut)">'+(mode==='unauth'?'Nenhum cartão cadastrado fora do grupo do veículo.':'Nenhuma leitura autorizada.')+'</div>';return;}
   var isU=(mode==='unauth');
   var map={};
@@ -292,12 +311,14 @@ function renderAgg(boxId,rows,mode){
       var grpTitle=!r.authorized?(' title="Grupos motorista: '+esc(r.driverGroupNames||'—')+' | Grupos veículo: '+esc(r.deviceGroupNames||'—')+'"'):'';
       var badge=(isU)?('<span class="badge warnb"'+grpTitle+'>Não autorizado</span>'):(r.authorized?'<span class="badge okb">Válido</span>':('<span class="badge warnb"'+grpTitle+'>Fora do grupo</span>'));
       var lnk=isU?getLink(r.deviceId,r.driverId):null;
-      var linkInfo=lnk?('<div style="font-size:10px;color:#047857;margin-top:3px">✓ vinculado '+fmtShort(lnk.linkedAt)+(lnk.linkedBy?(' por '+esc(lnk.linkedBy)):'')+'</div>'):'';
+      var attempt=isU?latestAttempt(r.deviceId,r.driverId):null;
+      var linkInfo=lnk?('<div class="uk-feedback ok">✓ Envio aceito '+fmtShort(lnk.linkedAt)+(lnk.linkedBy?(' por '+esc(lnk.linkedBy)):'')+'; aguardando GO</div>'):'';
+      if(attempt&&attempt.failed)linkInfo+='<div class="uk-feedback err">Última tentativa '+fmtShort(attempt.at)+': '+esc(attempt.sent)+' de '+esc(attempt.total)+' enviados. '+esc(attempt.error||'Ver histórico')+'</div>';
       var action=isU&&r.deviceId?('<td><button class="uk-link" data-dev="'+esc(r.deviceId)+'" data-driver="'+esc(r.driverId)+'" style="height:24px;padding:0 8px;font-size:10px">'+(lnk?'Reenviar':'Vincular')+'</button></td>'):(isU?'<td>—</td>':'');
       return '<tr><td>'+fmtDate(r.dateTime)+'</td><td><span class="mono" title="'+esc(r.serialAll||'')+'">'+esc(r.serial||'—')+'</span></td><td>'+esc(r.driverName)+'</td><td class="mono">'+esc(r.driverEmail||'—')+'</td><td>'+badge+linkInfo+'</td>'+action+'</tr>';
     }).join('');
     var bulk=isU&&grp.deviceId?('<button class="uk-link-all" data-dev="'+esc(grp.deviceId)+'" data-drivers="'+Object.keys(grp.drivers).join(',')+'" style="height:26px;padding:0 10px;font-size:10px">Vincular cartões</button>'):'';
-    return '<details style="border:1px solid var(--bd);border-radius:12px;background:var(--card2);overflow:hidden">'+
+    return '<details data-plate="'+esc(grp.plate)+'"'+(openPlates[grp.plate]?' open':'')+' style="border:1px solid var(--bd);border-radius:12px;background:var(--card2);overflow:hidden">'+
       '<summary style="cursor:pointer;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px">'+
         '<span><b style="color:var(--txt);font-size:13px">'+esc(grp.plate)+'</b> <span style="color:var(--mut)">• '+grp.rows.length+' leitura(s) autenticada(s)</span></span>'+
         '<span style="display:flex;align-items:center;gap:8px">'+bulk+'<span class="badge '+(isU?'riskb':'okb')+'">'+Object.keys(grp.drivers).length+' motorista(s)</span></span>'+
@@ -352,21 +373,26 @@ async function linkDrivers(deviceId,driverIds,btn){
   if(!keys.length){alertMsg('Nenhum cartão cadastrado (User.keys) para vincular'+(missing.length?': '+missing.join(', '):'.'),false,true);return;}
   var msg='Enviar '+keys.length+' cartão(ões)'+(driverIds.length>1?(' de '+names.length+' motorista(s)'):'')+' para a driver list do veículo?\n\nA authlist precisa estar habilitada no GO e existe limite de cartões por equipamento.';
   if(!window.confirm(msg))return;
+  var old=btn.textContent;btn.disabled=true;btn.textContent='Preparando...';
   var enabled=await ensureAuthListEnabled(deviceId);
   if(!enabled)alertMsg('Nao foi possivel habilitar a authlist automaticamente neste dispositivo; tentando envio mesmo assim.',false,true);
-  var old=btn.textContent;btn.disabled=true;btn.textContent='Enviando...';
+  btn.textContent='Enviando...';
   var okCount=0,fail=[],successByDriver={};
+  var resultByDriver={};
   for(var i=0;i<keys.length;i++){
-    try{await sendAuthKey(deviceId,keys[i].key);okCount++;var did=keys[i].driverId;(successByDriver[did]=successByDriver[did]||[]).push(keys[i].keyId);}
-    catch(e){fail.push(keys[i].driver+': '+(e&&(e.message||e.name)||e));}
+    var item=keys[i],did=item.driverId,dr=resultByDriver[did]||(resultByDriver[did]={total:0,sent:0,errors:[]});dr.total++;
+    try{await sendAuthKey(deviceId,item.key);okCount++;dr.sent++;(successByDriver[did]=successByDriver[did]||[]).push(item.keyId);}
+    catch(e){var reason=String(e&&(e.message||e.name)||e);fail.push(item.driver+': '+reason);dr.errors.push(reason);}
   }
   var dev=devices[deviceId]||{};
   Object.keys(successByDriver).forEach(function(did){recordLinkLocal(deviceId,did,successByDriver[did],dev.plate||'',(users[did]&&users[did].name)||'');});
-  if(okCount>0)await saveAddinData();
+  Object.keys(resultByDriver).forEach(function(did){var dr=resultByDriver[did];recordAttempt({at:new Date().toISOString(),deviceId:deviceId,driverId:did,plate:dev.plate||'',driverName:(users[did]&&users[did].name)||'',total:dr.total,sent:dr.sent,failed:dr.errors.length,error:dr.errors.slice(0,2).join(' | '),by:sessionUser||''});});
+  await saveAddinData();
   btn.disabled=false;
   if(fail.length){btn.textContent=old;alertMsg('Enviados '+okCount+' de '+keys.length+'. Falhas: '+fail.slice(0,3).join(' | '),false,true);}
   else{btn.textContent='Vinculado ✓';btn.style.color='#047857';btn.style.borderColor='#10b981';alertMsg(okCount+' cartão(ões) enviados para a driver list. O GO aplica quando conectar.',true,false);}
   renderAgg('unauthTableBox',filteredValid.filter(function(r){return !r.authorized;}),'unauth');
+  renderHistory();
 }
 function renderValidTable(){renderAgg('validTableBox',filteredValid.filter(function(r){return r.authorized;}),'valid');}
 function renderUnauthTable(){renderAgg('unauthTableBox',filteredValid.filter(function(r){return !r.authorized;}),'unauth');}
