@@ -92,7 +92,7 @@ function shell(){
     '<div class="panel"><div class="pt">Tentativas de cartões não cadastrados</div><div id="tableBox"></div></div>'+
     '<div class="panel"><div class="pt">Viagens validadas por dia (cartões cadastrados)</div><div id="dailyBox" style="color:var(--mut);font-size:12px">—</div></div>'+
     '<div class="panel"><div class="pt">Leituras válidas autorizadas (cartões cadastrados)</div><div id="validTableBox"></div></div>'+
-    '<div class="panel"><div class="pt">Cartões cadastrados, mas sem autorização no veículo</div><div style="font-size:11px;color:var(--mut);margin:-6px 0 10px">Regra: grupos do motorista × grupos do veículo (passe o mouse no status para ver os grupos). Use <b>Vincular</b> para enviar o cartão à <i>driver list</i> (authlist) do equipamento — a authlist precisa estar habilitada no GO.</div><div id="unauthTableBox"></div><div id="linkHistoryBox"></div></div>'+
+    '<div class="panel" id="unauthPanel"><div class="pt">Cartões cadastrados, mas sem autorização no veículo</div><div style="font-size:11px;color:var(--mut);margin:-6px 0 10px">Regra: grupos do motorista × grupos do veículo (passe o mouse no status para ver os grupos). Use <b>Vincular</b> para enviar o cartão à <i>driver list</i> (authlist) do equipamento — a authlist precisa estar habilitada no GO.</div><div id="unauthTableBox"></div><div id="linkHistoryBox"></div></div>'+
     '<footer style="text-align:center;font-size:11px;color:var(--mut);padding:8px 0">Projeto independente • Licença MIT</footer>';
   $('refreshBtn').onclick=function(){load(apiRef);};
   $('periodFilter').onchange=function(){if(addinState){addinState.settings=addinState.settings||{};addinState.settings.period=this.value;saveAddinData();}apply();};
@@ -107,6 +107,13 @@ function applySettings(){
 }
 function setStatus(t){var e=$('statusBox');if(e)e.textContent=t;}
 function alertMsg(t,ok,err){var e=$('alertBox');if(!e)return;e.style.display=t?'block':'none';e.className='alert '+(ok?'ok':err?'err':'');e.textContent=t||'';}
+function focusUnauth(){
+  expandedSections['unauthTableBox']=true;
+  render();
+  var p=$('unauthPanel');if(p)p.scrollIntoView({behavior:'smooth',block:'start'});
+  var box=$('unauthTableBox');
+  if(box){var ds=box.querySelectorAll('details');for(var i=0;i<ds.length;i++)ds[i].open=true;}
+}
 function renderHistory(){
   var box=$('linkHistoryBox');if(!box)return;
   var history=(addinState&&addinState.linkHistory||[]),from=getRange().from;
@@ -276,7 +283,7 @@ function render(){
     ['Média validações/dia',avg?avg.toFixed(1):'0','por dia no período','var(--green)'],
     ['Última leitura válida',vLast?fmtDate(vLast.dateTime):'—','','var(--gray)']
   ];
-  $('kpisBox').innerHTML=cards.map(function(r,i){var click=(i===0)?' style="cursor:pointer" onclick="document.getElementById(\'tableBox\').scrollIntoView({behavior:\'smooth\',block:\'start\'});"':'';return '<div class="kpi"'+click+'><span>'+r[0]+'</span><b style="color:'+r[3]+';font-size:'+(r[0].indexOf('Última')===0?'14px':'30px')+'">'+esc(r[1])+'</b><small>'+esc(r[2])+'</small></div>';}).join('');
+  $('kpisBox').innerHTML=cards.map(function(r,i){var click='';if(i===0)click=' style="cursor:pointer" onclick="document.getElementById(\'tableBox\').scrollIntoView({behavior:\'smooth\',block:\'start\'});"';else if(i===5)click=' style="cursor:pointer" title="Clique para ver a lista de veículos e vincular cartões" onclick="if(window.ukFocusUnauth)window.ukFocusUnauth();"';return '<div class="kpi"'+click+'><span>'+r[0]+'</span><b style="color:'+r[3]+';font-size:'+(r[0].indexOf('Última')===0?'14px':'30px')+'">'+esc(r[1])+'</b><small>'+esc(r[2])+'</small></div>';}).join('');
 
   renderTable();
   renderSummary(uniqCards,uniqDev);
@@ -451,6 +458,7 @@ function renderMap(){
 async function init(api){
   try{
     apiRef=api;
+    window.ukFocusUnauth=focusUnauth;
     try{if(apiRef.getSession)apiRef.getSession(function(s){sessionUser=(s&&(s.userName||(s.user&&s.user.name)))||'';});}catch(e){}
     shell();setStatus('Carregando...');
     document.addEventListener('click',function(e){var b=e.target&&e.target.closest&&e.target.closest('.uk-expand');if(!b)return;var sec=b.getAttribute('data-sec');if(sec){expandedSections[sec]=!expandedSections[sec];render();}});

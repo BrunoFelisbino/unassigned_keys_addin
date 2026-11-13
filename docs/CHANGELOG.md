@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.7] — 2026-11-13
+
+### Adicionado
+- O card **Sem autorização** agora é clicável: rola até a seção de cartões cadastrados fora do grupo e abre automaticamente os veículos, facilitando o vínculo dos cartões de carros que mudaram de regional.
+
 ## [1.1.6] — 2026-11-10
 
 ### Adicionado
